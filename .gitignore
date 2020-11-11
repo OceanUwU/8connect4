@@ -1,0 +1,4 @@
+node_modules
+build/
+server/cfg.json
+src/socket/server.json

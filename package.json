@@ -1,0 +1,37 @@
+{
+  "name": "8connect4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server",
+    "build-client": "node node_modules/react-scripts/bin/react-scripts.js build",
+    "dev-client": "node node_modules/react-scripts/bin/react-scripts.js start"
+  },
+  "keywords": [],
+  "author": "flynn",
+  "license": "GNU GPL",
+  "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "fontsource-roboto": "^3.0.3",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-scripts": "^4.0.0",
+    "socket.io": "^3.0.1",
+    "socket.io-client": "^3.0.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

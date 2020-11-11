@@ -1,0 +1,7 @@
+.inactive-game {
+    opacity: 0.5;
+}
+
+.game-outcome-decided {
+    opacity: 0.8 !important;
+}
