@@ -58,7 +58,7 @@ io.on('connection', socket => {
     });
 
     socket.on('joinMatch', code => {
-        if (matches.hasOwnProperty(code)) {
+        if (typeof code == 'string' && matches.hasOwnProperty(code.toUpperCase())) {
             let match = matches[code];
             if (!match.started);
                 joinMatch(match, socket);
