@@ -5,3 +5,7 @@
 .game-outcome-decided {
     opacity: 0.8 !important;
 }
+
+#controller canvas {
+    max-width: 100%;
+}

@@ -118,11 +118,13 @@ class Match {
     }
 
     endTurn() {
-        for (let i of Object.keys(this.players).filter(player => !this.players[player].takenTurn)) //for every player who hasn't taken their turn
-            for (let j of this.games.filter(game => game.players[this.turn] == i)) //for every game where it's that player's turn
-                for (let k = 0; k < boardWidth; k++) //for every column of that game's board
-                    if (j.move(k, i)) //attempt to make a move in that column
-                        break; //stop attempting moves
+        for (let i of Object.keys(this.players).filter(player => !this.players[player].takenTurn)) { //for every player who hasn't taken their turn
+            if (this.players[i].hover != null && this.move(i, this.turn, this.players[i].hover)) //if the player is hovering over a slot, try moving in that slot. if that move is successful,
+                continue; //go to the next player who hasnt moved
+            for (let k = 0; k < boardWidth; k++) //for every column of that game's board
+                if (this.move(i, this.turn, k)) //attempt to make a move in that column
+                    continue; //stop attempting moves
+        }
 
         let matchFinished = true;
         for (let i of this.games)
@@ -187,8 +189,10 @@ class Match {
         }
         if (finished)
             this.players[player].finished = true;
-        if (moved)
+        if (moved) {
             this.players[player].takenTurn = true;
+            this.players[player].hover = null;
+        }
         
         return moved;
     }
@@ -199,8 +203,10 @@ class Match {
         if (!Number.isInteger(column) || column < 0 && column >= boardWidth)
             return;
         for (let game of this.games.filter(e => e.players[this.turn] == player))
-            if (game.outcome == null)
+            if (game.outcome == null) {
+                this.players[player].hover = column;
                 io.to(this.code).emit('hover', game.id, this.turn, column);
+            }
     }
 }
 

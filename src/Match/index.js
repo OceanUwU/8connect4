@@ -56,10 +56,11 @@ const useStyles = makeStyles({
 
     playingGames: {
         display: 'flex',
-        width: 600,
+        maxWidth: 600,
         margin: 'auto',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
     },
 
     otherGamesContainer: {
@@ -67,13 +68,15 @@ const useStyles = makeStyles({
         width: '100%',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
     },
 
     otherGames: {
         display: 'flex',
-        width: 600,
+        maxWidth: 600,
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
     },
 
     vsMe: {

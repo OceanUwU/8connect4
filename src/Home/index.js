@@ -4,10 +4,14 @@ import { makeStyles } from '@material-ui/core/styles';
 import CodeInput from './CodeInput';
 import NameInput from './NameInput';
 import socket from '../socket';
+import { Autorenew } from '@material-ui/icons';
 
 const useStyles = makeStyles({
-    title: {
+    logoImage: {
+        display: 'block',
         textAlign: 'center',
+        margin: 'auto',
+        maxWidth: 350,
     },
 
     controls: {
@@ -22,7 +26,9 @@ function Home() {
 
     return (
         <div>
-            <Typography className={classes.title} variant="h1" gutterBottom>8connect4</Typography>
+            <Typography className={classes.title} variant="h3" gutterBottom><img class={classes.logoImage} src="/icon.png" alt="8connect4" /></Typography>
+
+            
 
             <Typography variant="body1" gutterBottom>
                 Play 8 games of connect 4 at once.

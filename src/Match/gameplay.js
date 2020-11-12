@@ -150,7 +150,7 @@ function drawBoard(game, overlayImage = null) {
         ctx.globalAlpha = 1; //reset alpha
     }
 
-    if (overlayImage != null) {
+    if (overlayImage != null && overlayImage.complete) {
         ctx.globalAlpha = 0.75;
         ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);    
         ctx.globalAlpha = 1; //reset alpha

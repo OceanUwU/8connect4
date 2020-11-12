@@ -29,14 +29,15 @@ function render(event = null) {
         ctx.fillRect(0, (boxSize+gridlineSize)*i, canvas.width, gridlineSize);
 
     if (event != null) {
-        let x = event.layerX - gridlineSize;
-        let y = event.layerY - gridlineSize;
+        let bbox = event.target.getBoundingClientRect();
+        let x = (event.clientX - bbox.left - gridlineSize) * (canvas.width / bbox.width);
+        let y = (event.clientY - bbox.top - gridlineSize) * (canvas.height / bbox.height);
         if (x < 0 || y < 0) return;
 
         if (y >= boxSize) return;
         if (x%(boxSize+gridlineSize) >= boxSize) return;
 
-        let newSlot = Math.floor(event.layerX/(boxSize+gridlineSize));
+        let newSlot = Math.floor(x/(boxSize+gridlineSize));
         if (slot != newSlot) {
             slot = newSlot;
             socket.emit('hover', slot);
@@ -59,6 +60,8 @@ function move() {
 
 render();
 canvas.addEventListener('mousemove', render);
+canvas.addEventListener('touchstart', render);
+canvas.addEventListener('touchmove', render);
 canvas.addEventListener('mousedown', move);
 
 export {

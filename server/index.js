@@ -4,7 +4,7 @@ const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 const typesAvailable = [0, 1];
 
 const codeLength = 6;
-const codeChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const io = require("socket.io")(cfg.port, {
     cors: {
@@ -19,9 +19,9 @@ function generateUsername(socket) {
 
 function joinMatch(match, socket) {
     if (socket.ingame)
-        return;
+        return socket.emit('err');
     if (Object.keys(match.players).length >= match.maxPlayers)
-        return;
+        return socket.emit('err', 'That match was full or had already started.', 'Couldn\'t join match');
     match.join(socket.id);
     socket.join(match.code);
     socket.emit('joinMatch');
@@ -62,7 +62,8 @@ io.on('connection', socket => {
             let match = matches[code];
             if (!match.started);
                 joinMatch(match, socket);
-        }
+        } else
+            socket.emit('err', 'Try again.', 'Invalid room code')
     });
 
     socket.on('findMatch', () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography, Tooltip, IconButton, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import MeetingRoomIcon from '@material-ui/icons/MeetingRoom';
 import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
 import socket from '../socket';
@@ -58,7 +58,7 @@ function Lobby(props) {
     return (
         <div>
             <IconButton onClick={() => window.location.reload()}>
-                <ArrowBackIcon />
+                <MeetingRoomIcon />
             </IconButton>
             <div className={classes.root}>
                 <Typography variant="overline" display="block" gutterBottom>
