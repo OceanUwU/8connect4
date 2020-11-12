@@ -7,8 +7,6 @@ import LockIcon from '@material-ui/icons/Lock';
 import socket from '../socket';
 import d from '../';
 
-const playerCount = 9;
-
 const useStyles = makeStyles({
     root: {
         textAlign: 'center',
@@ -41,7 +39,7 @@ function Lobby(props) {
     const classes = useStyles();
 
     let tableBody = [];
-    for (let i = 0; i < playerCount; i++) {
+    for (let i = 0; i < props.matchInfo.maxPlayers; i++) {
         let content = '';
         let you = false
         if (i in props.matchInfo.players) {
@@ -79,7 +77,7 @@ function Lobby(props) {
                         <TableHead>
                             <TableRow className={classes.head}>
                                 <TableCell className={classes.tableCell}>
-                                    Players: {props.matchInfo.players.length}/{playerCount}
+                                    Players: {props.matchInfo.players.length}/{props.matchInfo.maxPlayers}
                                 </TableCell>
                             </TableRow>
                         </TableHead>

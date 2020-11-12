@@ -143,10 +143,10 @@ function Match(props) {
                     </div>
                     <div className={classes.gameInfoContent}>
                         <Typography variant="h3">
-                            <span id="gamesLeft">36</span>
+                            <span id="gamesLeft">0</span>
                         </Typography>
                         <Typography variant="h5">
-                            /36
+                            /<span id="maxGames">0</span>
                         </Typography>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 const cfg = require('./cfg');
 const maxUsernameLength = 12;
 const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 áéíóúÁÉÍÓÚ!"£$€%^&*()-=_+[]{};\'#:@~,./<>?\\|`¬¦';
-const numberOfPlayers = 9;
+const typesAvailable = [0, 1];
 
 const codeLength = 6;
 const codeChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -20,7 +20,7 @@ function generateUsername(socket) {
 function joinMatch(match, socket) {
     if (socket.ingame)
         return;
-    if (Object.keys(match.players).length >= numberOfPlayers)
+    if (Object.keys(match.players).length >= match.maxPlayers)
         return;
     match.join(socket.id);
     socket.join(match.code);
@@ -28,10 +28,10 @@ function joinMatch(match, socket) {
     socket.ingame = match.code;
 }
 
-function createMatch(socket, public) {
+function createMatch(socket, public, type) {
     if (socket.ingame)
         return;
-    let match = new Match(public);
+    let match = new Match(public, type);
     let code = generateMatchCode();
     matches[code] = match;
     match.code = code;
@@ -68,12 +68,15 @@ io.on('connection', socket => {
     socket.on('findMatch', () => {
         let match = Object.values(matches).find(e => e.isPublic && !e.started);
         if (match == undefined) //if there are no available matches
-            createMatch(socket, true);
+            createMatch(socket, true, 0);
         else
             joinMatch(match, socket);
     });
 
-    socket.on('createMatch', () => createMatch(socket, false));
+    socket.on('createMatch', type => {
+        if (typeof type == 'number' && typesAvailable.includes(type))
+            createMatch(socket, false, type);
+    });
 
     socket.on('move', (colour, column) => {
         if (socket.ingame && typeof colour == 'string' && typeof column == 'number') {

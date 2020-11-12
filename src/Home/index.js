@@ -36,7 +36,9 @@ function Home() {
 
                 <Button variant="contained" size="large" color="primary" onClick={() => socket.emit('findMatch')}>Find Match</Button>
                 <br />
-                <Button variant="contained" size="large" color="secondary" onClick={() => socket.emit('createMatch')}>Create Private Match</Button>
+                <Button variant="contained" size="small" color="secondary" onClick={() => socket.emit('createMatch', 0)}>Create Private Match (9P)</Button>
+                <br />
+                <Button variant="contained" size="small" color="default" onClick={() => socket.emit('createMatch', 1)}>Create Private Match (5P)</Button>
 
                 <br /><br /><br />
 

@@ -61,6 +61,8 @@ function playMatch(startingMatchInfo, sentId) {
     gamesLeft = games.length;
     ReactDOM.render(<Match players={startingMatchInfo.players} games={games} myId={myId} />, document.getElementById('root'), () => {
         document.getElementById('controller').appendChild(controller.canvas);
+        document.getElementById('maxGames').innerHTML = gamesLeft;
+        document.getElementById('gamesLeft').innerHTML = gamesLeft;
         for (let i in games)
             drawBoardsOfId(i);
         intervals.timer = setInterval(showTimer, 1000/24);
