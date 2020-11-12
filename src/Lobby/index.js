@@ -5,7 +5,6 @@ import MeetingRoomIcon from '@material-ui/icons/MeetingRoom';
 import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
 import socket from '../socket';
-import d from '../';
 
 const useStyles = makeStyles({
     root: {
