@@ -2,16 +2,18 @@ const Game = require('./Game');
 const { matches, io } = require('./');
 
 const boardWidth = 7;
-const numberOfPlayers = 9;
+const numberOfPlayers = [9, 5];
 const turnTime = 8000;
 const opposite = {'a': 'b', 'b': 'a'};
 
 
 class Match {
-    constructor(isPublic) {
+    constructor(isPublic, type) {
         this.isPublic = isPublic;
         this.started = false;
         this.allowMoves = false;
+        this.type = type;
+        this.maxPlayers = numberOfPlayers[type];
         this.players = {};
         this.games = [];
         this.turn = 'a';
@@ -30,6 +32,7 @@ class Match {
                 started: this.games.length > 1 ? true : false,
                 public: this.isPublic,
                 code: this.code,
+                maxPlayers: this.maxPlayers,
                 players: this.playerInfo()
             };
             io.to(this.code).emit('matchUpdate', matchInfo);
@@ -43,7 +46,7 @@ class Match {
             takenTurn: false,
             name: io.sockets.sockets.get(player).username
         }
-        if (Object.keys(this.players).length == numberOfPlayers) {
+        if (Object.keys(this.players).length == this.maxPlayers) {
             this.started = true; //mark this match as started
             setTimeout(() => this.start(), 2000);
         }
@@ -64,14 +67,27 @@ class Match {
 
         let playerList = Object.keys(this.players);
         let n = 0;
-        for (let i = 0; i < numberOfPlayers; i++) {
-            for (let j = i+1; j < numberOfPlayers; j++) {
-                let gamePlayers = {a: playerList[i], b: playerList[j]}
-                if (++n % 2 == 0)  
-                    gamePlayers = {a: gamePlayers.b, b: gamePlayers.a};
+        switch (this.type) {
+            case 0:        
+                for (let i = 0; i < this.maxPlayers; i++) {
+                    for (let j = i+1; j < this.maxPlayers; j++) {
+                        let gamePlayers = {a: playerList[i], b: playerList[j]}
+                        if (++n % 2 == 0)  
+                            gamePlayers = {a: gamePlayers.b, b: gamePlayers.a};
 
-                this.games.push(new Game(n-1, gamePlayers, this));
-            }
+                        this.games.push(new Game(n-1, gamePlayers, this));
+                    }
+                }
+                break;
+
+            case 1:
+                for (let i of playerList) {
+                    for (let j of playerList) {
+                        if (i != j)
+                            this.games.push(new Game(n++, {a: i, b: j}, this));
+                    }
+                }
+                break;
         }
 
         this.turnTimer = setInterval(this.endTurn.bind(this), turnTime+1000);
