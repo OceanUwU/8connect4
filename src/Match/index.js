@@ -11,6 +11,11 @@ const useStyles = makeStyles({
         margin: 'auto',
         alignItems: 'center',
         justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        backgroundColor: 'white',
+        borderBottom: '1px solid #0000001f',
+        zIndex: 100,
         '& div': {
             flexGrow: 1,
         },
