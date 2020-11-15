@@ -1,5 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import theme from '../theme';
+import { CssBaseline } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
 import Match from './';
 import Results from '../Results';
 import shuffleString from './shuffleString';
@@ -10,8 +13,11 @@ const boxSize = 50;
 const gridlineSize = 4;
 const boardWidth = 7;
 const boardHeight = 6;
-const numberOfGames = 36;
-const gameNameChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+const gameNameChars = '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const placeAudio = new Audio('/place.mp3');
+const otherPlaceAudio = new Audio('/otherPlace.mp3');
+const gameEndAudio = new Audio('/endGame.mp3');
+const startTurnAudio = new Audio('/startTurn.mp3');
 
 
 var matchInfo;
@@ -39,7 +45,6 @@ function playMatch(startingMatchInfo, sentId) {
     myId = sentId;
     matchInfo = startingMatchInfo;
     turnNumber = 0;
-    let gameNames = shuffleString(gameNameChars);
     for (let i in startingMatchInfo.games) {
         let game = startingMatchInfo.games[i];
         let state = [];
@@ -53,19 +58,20 @@ function playMatch(startingMatchInfo, sentId) {
 
         games.push({
             id: i,
-            name: gameNames[i],
+            name: (i > gameNameChars.length ? `${gameNameChars[~~(i/gameNameChars.length)]}${gameNameChars[i%gameNameChars.length]}` : gameNameChars[i]),
             players: game.players,
             state: state,
         });
     }
     gamesLeft = games.length;
-    ReactDOM.render(<Match players={startingMatchInfo.players} games={games} myId={myId} />, document.getElementById('root'), () => {
+    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
         document.getElementById('controller').appendChild(controller.canvas);
         document.getElementById('maxGames').innerHTML = gamesLeft;
         document.getElementById('gamesLeft').innerHTML = gamesLeft;
         for (let i in games)
             drawBoardsOfId(i);
         intervals.timer = setInterval(showTimer, 1000/24);
+        (new Audio('/startMatch.mp3')).play();
     });
 }
 
@@ -73,14 +79,17 @@ function switchTurn(newTurn) {
     document.getElementById('turnNumber').innerHTML = ++turnNumber;
     turn = newTurn;
     turnTimerEnd = Date.now() + matchInfo.turnTime;
-    for (let element of document.getElementsByClassName(`game-${newTurn == 'a' ? 'b' : 'a'}`))
+    for (let element of [...document.getElementsByClassName(`game-${newTurn == 'a' ? 'b' : 'a'}`), ...document.getElementsByClassName(`colour-indicator-${newTurn == 'a' ? 'b' : 'a'}`)])
         element.classList.add('inactive-game');
-    for (let element of document.getElementsByClassName(`game-${newTurn}`))
+    for (let element of [...document.getElementsByClassName(`game-${newTurn}`), ...document.getElementsByClassName(`colour-indicator-${newTurn}`)])
         element.classList.remove('inactive-game');
     for (let game of games) {
         game.hover = null;
     }
+    document.getElementById('turnIndicator').src = `/${newTurn}.png`;
     controller.turnChange(newTurn);
+    if (turnNumber > 1)
+        startTurnAudio.play();
 }
 
 function hover(gameId, colour, column) {
@@ -94,12 +103,16 @@ function move(gameId, colour, column, row) {
     game.state[column][row] = colour;
     game.hover = null;
     drawBoardsOfId(gameId);
+    if (!myId.startsWith(game.players[colour]))
+        otherPlaceAudio.play();
 }
 
 function takenTurn(colour) {
-    if (colour == turn)
+    placeAudio.play();
+    if (colour == turn) {
         for (let i of document.querySelectorAll(`.self-game.game-${colour}`))
             i.classList.add('inactive-game');
+    }
 }
 
 function drawCounter(image, column, row) {
@@ -111,7 +124,7 @@ function drawBoard(game, overlayImage = null) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
 
     //draw gridlines
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = 'white';
     for (let i = 0; i <= boardHeight; i++)
         ctx.fillRect(0, boxSize+((boxSize+gridlineSize)*i), canvas.width, gridlineSize);
     for (let i = 0; i <= boardWidth; i++)
@@ -126,7 +139,6 @@ function drawBoard(game, overlayImage = null) {
         }
     
     if (game.hover !== null) {
-        ctx.globalAlpha = 0.5;
 
         drawCounter(images[turn], game.hover, -1); //draw counter above board
 
@@ -143,11 +155,16 @@ function drawBoard(game, overlayImage = null) {
         if (row == null) //if all the slots were empty
             row = boardHeight - 1; //use the bottom slot
         if (row !== false) {
+            if (images.hover[turn].complete) {
+                ctx.globalAlpha = 0.15;
+                ctx.drawImage(images.hover[turn], ((boxSize+gridlineSize)*Number(game.hover))+gridlineSize, boxSize+gridlineSize, boxSize, (boxSize+gridlineSize)*(Number(row)+1)-gridlineSize);
+            }
+            ctx.globalAlpha = 0.5;
             drawCounter(images[turn], game.hover, row);
+            ctx.globalAlpha = 1; //reset alpha
         }
         
 
-        ctx.globalAlpha = 1; //reset alpha
     }
 
     if (overlayImage != null && overlayImage.complete) {
@@ -172,7 +189,7 @@ function outcomeDecided(boardId, outcome) {
     for (let i of document.getElementsByClassName(`game${boardId}`)) {
         i.classList.add('game-outcome-decided');
         let relativeOutcome, glowColor;
-        if (outcome == null) {
+        if (outcome == false) {
             relativeOutcome = 'draw';
             glowColor = 'red';
         } else if (outcome == i.getAttribute('data-playercolour')) {
@@ -184,6 +201,8 @@ function outcomeDecided(boardId, outcome) {
         }
         i.src = drawBoard(games[boardId], images.outcomeOverlay[relativeOutcome]);
     }
+
+    gameEndAudio.play();
 }
 
 function endMatch(results) {
@@ -200,7 +219,7 @@ function endMatch(results) {
     }
     games.sort((a, b) => gameNameChars.indexOf(a.name) - gameNameChars.indexOf(b.name));
 
-    ReactDOM.render(<Results myId={myId} results={results} games={games} />, document.getElementById('root'));
+    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Results myId={myId} results={results} games={games} /></ThemeProvider>, document.getElementById('root'));
 
     matchInfo = null;
     games = [];

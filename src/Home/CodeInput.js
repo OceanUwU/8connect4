@@ -62,6 +62,7 @@ class CodeInput extends React.Component {
                         type="text"
                         value={this.state.code}
                         onChange={this.changeInput}
+                        autoComplete="off"
                         inputProps={{
                             className: classes.textInput,
                             maxLength: 6,

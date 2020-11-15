@@ -3,7 +3,7 @@
 }
 
 .game-outcome-decided {
-    opacity: 0.8 !important;
+    opacity: 0.3 !important;
 }
 
 #controller canvas {

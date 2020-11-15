@@ -26,12 +26,13 @@ class Game {
 
 
 
-    move(column, player) { //will return true if a move was successfully made, false otherwise
+    move(column, player, colour) { //will return true if a move was successfully made, false otherwise
         //if this game has ended, block the move
         if (this.outcome !== null)
             return false;
         
-        player = Object.keys(this.players).find(key => this.players[key] == player);
+        if (this.players[colour] != player)
+            return false;
 
         let row = null;
         for (let i = 0; i < boardHeight; i++) {
@@ -46,7 +47,7 @@ class Game {
             row = boardHeight - 1; //use the bottom slot
         
 
-        this.state[row][column] = player; //fill the chosen slot with the player's colour
+        this.state[row][column] = colour; //fill the chosen slot with the player's colour
         io.to(this.match.code).emit('move', this.id, this.match.turn, row, column); //tell the clients about this move
 
         

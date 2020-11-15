@@ -13,8 +13,8 @@ const useStyles = makeStyles({
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
-        backgroundColor: 'white',
-        borderBottom: '1px solid #0000001f',
+        backgroundColor: 'black',
+        borderBottom: '1px solid #ffffff1f',
         zIndex: 100,
         '& div': {
             flexGrow: 1,
@@ -39,12 +39,16 @@ const useStyles = makeStyles({
         textAlign: 'center',
     },
 
+    colourIndicator: {
+        height: 49,
+    },
+
     playerArea: {
         paddingTop: 8,
         paddingBottom: 8,
         marginBottom: 16,
         textAlign: 'center',
-        border: '1px solid #0000001f',
+        border: '1px solid #ffffff1f',
         borderRadius: 10,
     },
 
@@ -96,7 +100,7 @@ function GameImage(props) {
 
     return (
         <div>
-            <img data-playercolour={props.playerColour} className={`${props.self ? 'self-game ' : ''}${props.self ? classes.selfGameImage : classes.otherGameImage} game-${colour} game${props.game.id}`} />
+            <img data-playercolour={props.playerColour} className={`${props.self ? 'self-game ' : ''}${props.self ? classes.selfGameImage : classes.otherGameImage} ${props.self && props.games.length == 1 && props.playerColour == 'b' ? 'game-b' : `game-${colour}`} game${props.game.id}`} />
             <Typography variant="caption" display="block">
                 Game {props.game.name} vs {props.myId.startsWith(opponent.id) ? <span className={classes.vsMe}>{opponent.name}</span> : opponent.name}
             </Typography>
@@ -122,14 +126,14 @@ function PlayerGames(props) {
             }
             <div className={props.self ? classes.playingGamesContainer : classes.otherGamesContainer}>
                 <div className={gameRowClass}>
-                    {props.self ? <img src="/a.png" /> : null}
-                    {props.games.filter(game => props.player.id.startsWith(game.players.a)).map(game => <GameImage self={props.self} game={game} players={props.players} playerColour={'a'} playerId={props.player.id} myId={props.myId} />)}
-                    {props.self ? null : <img src="/a.png" />}
+                    {props.self ? <img className={`${classes.colourIndicator} colour-indicator-a`} src="/a.png" /> : null}
+                    {props.games.filter(game => props.player.id.startsWith(game.players.a)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'a'} playerId={props.player.id} myId={props.myId} />)}
+                    {props.self ? null : <img className={`${classes.colourIndicator} colour-indicator-a`} src="/a.png" />}
                 </div>
                 {props.self ? <div id="controller" className={classes.controls} /> : null}
                 <div className={gameRowClass}>
-                    <img src="/b.png" />
-                    {props.games.filter(game => props.player.id.startsWith(game.players.b)).map(game => <GameImage self={props.self} game={game} players={props.players} playerColour={'b'} playerId={props.player.id} myId={props.myId} />)}
+                    <img className={`${classes.colourIndicator} colour-indicator-b`} src="/b.png" />
+                    {props.games.filter(game => props.player.id.startsWith(game.players.b)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'b'} playerId={props.player.id} myId={props.myId} />)}
                 </div>
             </div>
         </div>
@@ -180,6 +184,7 @@ function Match(props) {
                     </div>
                     <div className={classes.gameInfoContent}>
                         <Typography variant="h3">
+                            <img height="35" id="turnIndicator" />
                             <span id="turnNumber">0</span>
                         </Typography>
                     </div>

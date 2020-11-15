@@ -54,7 +54,7 @@ class Dialog extends React.Component {
                     </DialogContent>
                     <DialogActions>
                         {this.props.required ? null : (
-                            <Button onClick={this.handleClose} color="primary">
+                            <Button onClick={this.handleClose} color="secondary">
                                 Close
                             </Button>
                         )}

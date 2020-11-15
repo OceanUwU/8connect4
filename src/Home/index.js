@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import CodeInput from './CodeInput';
 import NameInput from './NameInput';
 import socket from '../socket';
-import { Autorenew } from '@material-ui/icons';
+import showMatchOptions from './showMatchOptions';
 
 const useStyles = makeStyles({
     logoImage: {
@@ -16,7 +16,7 @@ const useStyles = makeStyles({
 
     controls: {
         textAlign: 'center',
-        border: '1px solid #0000001f',
+        border: '1px solid #ffffff1f',
         borderRadius: 10,
     },
 });
@@ -26,9 +26,7 @@ function Home() {
 
     return (
         <div>
-            <Typography className={classes.title} variant="h3" gutterBottom><img class={classes.logoImage} src="/icon.png" alt="8connect4" /></Typography>
-
-            
+            <Typography className={classes.title} variant="h3" gutterBottom><img className={classes.logoImage} src="/iconanimated2.png" alt="8connect4" /></Typography>
 
             <Typography variant="body1" gutterBottom>
                 Play 8 games of connect 4 at once.
@@ -40,11 +38,9 @@ function Home() {
                 <Divider />
                 <br />
 
-                <Button variant="contained" size="large" color="primary" onClick={() => socket.emit('findMatch')}>Find Match</Button>
+                <Button size="large" color="primary" onClick={() => socket.emit('findMatch')}>Find Match</Button>
                 <br />
-                <Button variant="contained" size="small" color="secondary" onClick={() => socket.emit('createMatch', 0)}>Create Private Match (9P)</Button>
-                <br />
-                <Button variant="contained" size="small" color="default" onClick={() => socket.emit('createMatch', 1)}>Create Private Match (5P)</Button>
+                <Button size="small" color="secondary" onClick={showMatchOptions}>Create Match</Button>
 
                 <br /><br /><br />
 

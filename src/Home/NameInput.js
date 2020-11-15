@@ -14,7 +14,7 @@ const useStyles = makeStyles((theme) => ({
         margin: theme.spacing(1),
     },
     input: {
-        width: 250,
+        width: 170,
     },
     label: {
         textAlign: 'center',
@@ -46,6 +46,7 @@ function NameInput() {
                         label="Your name"
                         value={name}
                         onChange={handleChange}
+                        autoComplete="off"
                         inputProps={{
                             className: classes.input,
                             maxLength: 12,

@@ -21,7 +21,7 @@ function turnChange(newTurn) {
 
 function render(event = null) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = 'white';
 
     for (let i = 0; i < boardWidth + 1; i++)
         ctx.fillRect((boxSize+gridlineSize)*i, 0, gridlineSize, canvas.height);
@@ -29,6 +29,8 @@ function render(event = null) {
         ctx.fillRect(0, (boxSize+gridlineSize)*i, canvas.width, gridlineSize);
 
     if (event != null) {
+        if (event.type.startsWith('touch'))
+            event = event.changedTouches[0];
         let bbox = event.target.getBoundingClientRect();
         let x = (event.clientX - bbox.left - gridlineSize) * (canvas.width / bbox.width);
         let y = (event.clientY - bbox.top - gridlineSize) * (canvas.height / bbox.height);
@@ -62,6 +64,7 @@ render();
 canvas.addEventListener('mousemove', render);
 canvas.addEventListener('touchstart', render);
 canvas.addEventListener('touchmove', render);
+canvas.addEventListener('touchend', move);
 canvas.addEventListener('mousedown', move);
 
 export {

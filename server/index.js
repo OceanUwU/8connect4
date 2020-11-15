@@ -1,7 +1,8 @@
 const cfg = require('./cfg');
 const maxUsernameLength = 12;
 const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 áéíóúÁÉÍÓÚ!"£$€%^&*()-=_+[]{};\'#:@~,./<>?\\|`¬¦';
-const typesAvailable = [0, 1];
+const playersAllowed = [1, 100];
+const turnTimesAllowed = [0, 1000];
 
 const codeLength = 6;
 const codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -28,10 +29,10 @@ function joinMatch(match, socket) {
     socket.ingame = match.code;
 }
 
-function createMatch(socket, public, type) {
+function createMatch(socket, options) {
     if (socket.ingame)
         return;
-    let match = new Match(public, type);
+    let match = new Match(options);
     let code = generateMatchCode();
     matches[code] = match;
     match.code = code;
@@ -60,23 +61,48 @@ io.on('connection', socket => {
     socket.on('joinMatch', code => {
         if (typeof code == 'string' && matches.hasOwnProperty(code.toUpperCase())) {
             let match = matches[code.toUpperCase()];
-            if (!match.started);
-                joinMatch(match, socket);
+            if (Object.keys(match.players).length < match.maxPlayers) {
+                if (!match.started)
+                    joinMatch(match, socket);
+                else
+                    socket.emit('err', ':(', 'That match has already started.');
+            } else
+                socket.emit('err', `It's reached its ${match.maxPlayers} player limit, and no more players can join.`, 'That match is full.');
         } else
             socket.emit('err', 'Try again.', 'Invalid room code')
     });
 
     socket.on('findMatch', () => {
-        let match = Object.values(matches).find(e => e.isPublic && !e.started);
-        if (match == undefined) //if there are no available matches
-            createMatch(socket, true, 0);
+        let matchesAvailable = Object.values(matches).filter(e => e.isPublic && !e.started && Object.keys(e.players).length < e.maxPlayers);
+        if (matchesAvailable.length > 0) //if there are available matches
+            joinMatch(matchesAvailable[Math.floor(Math.random()*matchesAvailable.length)], socket);
         else
-            joinMatch(match, socket);
+            socket.emit('err', 'Maybe create one yourself for people to join?', 'No public matches available.')
     });
 
-    socket.on('createMatch', type => {
-        if (typeof type == 'number' && typesAvailable.includes(type))
-            createMatch(socket, false, type);
+    socket.on('createMatch', options => {
+        if (
+            typeof options == 'object'
+            && typeof options.public == 'boolean'
+            && Number.isInteger(options.players)
+            && options.players >= playersAllowed[0]
+            && options.players <= playersAllowed[1]
+            && typeof options.turnTime == 'number'
+            && options.turnTime >= turnTimesAllowed[0]
+            && options.turnTime <= turnTimesAllowed[1]
+            && typeof options.runDownTimer == 'boolean'
+        )
+            createMatch(socket, {
+                public: options.public,
+                players: options.players,
+                turnTime: options.turnTime,
+                runDownTimer: options.runDownTimer,
+            });
+    });
+
+    socket.on('startMatch', () => {
+        if (socket.ingame)
+            matches[socket.ingame].startStartTimer(socket.id);
     });
 
     socket.on('move', (colour, column) => {
@@ -84,7 +110,7 @@ io.on('connection', socket => {
             let match = matches[socket.ingame];
             if (match && match.allowMoves)
                 if (match.move(socket.id, colour, column))
-                    socket.emit('takenTurn', match.turn);
+                    socket.emit('takenTurn', colour);
         }
     });
 

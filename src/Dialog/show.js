@@ -1,5 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import theme from '../theme';
+import { CssBaseline } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
 import Dialog from './';
 
 async function showDialog(props = {}, children = null) {
@@ -11,9 +14,12 @@ async function showDialog(props = {}, children = null) {
     
         let dialog;
         ReactDOM.render((
-            <Dialog {...props} ref={element => dialog = element}>
-                {children}
-            </Dialog>
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <Dialog {...props} ref={element => dialog = element}>
+                    {children}
+                </Dialog>
+            </ThemeProvider>
         ), document.getElementById('dialog'));
         
         if (!dialog) //if it didnt work,

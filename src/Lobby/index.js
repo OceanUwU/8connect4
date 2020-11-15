@@ -1,9 +1,10 @@
 import React from 'react';
-import { Typography, Tooltip, IconButton, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@material-ui/core';
+import { Typography, Divider, Button, Tooltip, IconButton, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import MeetingRoomIcon from '@material-ui/icons/MeetingRoom';
 import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
+import StarsIcon from '@material-ui/icons/Stars';
 import socket from '../socket';
 
 const useStyles = makeStyles({
@@ -21,7 +22,7 @@ const useStyles = makeStyles({
     },
 
     head: {
-        backgroundColor: 'lightgrey',
+        backgroundColor: 'black',
     },
 
     tableCell: {
@@ -48,11 +49,22 @@ function Lobby(props) {
         tableBody.push(
             <TableRow key={i}>
                 <TableCell className={classes.tableCell}>
+                    {i in props.matchInfo.players && props.matchInfo.host == props.matchInfo.players[i].id ?
+                        <Tooltip title="This player is the host. They have the ability to start the game.">
+                            <StarsIcon fontSize="inherit" />
+                        </Tooltip>
+                    : null}
                     {you ? <span className={classes.you}>{content}</span> : content}
                 </TableCell>
             </TableRow>
         );
     }
+
+    if (props.matchInfo.starting) {
+        (new Audio(`/countdown/${props.matchInfo.startTimer}.mp3`)).play();
+    }
+
+    let amHost = socket.id.startsWith(props.matchInfo.host);
 
     return (
         <div>
@@ -70,7 +82,16 @@ function Lobby(props) {
                     {props.matchInfo.code}
                 </Typography>
 
-                
+                {props.matchInfo.starting ?
+                    <Typography variant="h4">Starting in {props.matchInfo.startTimer}...</Typography>
+                :
+                    <Tooltip title={amHost ? 'Begin a timer to start the match. No more players will be able to join.' : 'Only the host can start the match.'}>
+                        <span>
+                            <Button color={amHost ? 'primary' : 'default'} size="large" onClick={() => socket.emit('startMatch')} disabled={!amHost}>Start Match</Button>
+                        </span>
+                    </Tooltip>
+                }
+
                 <TableContainer component={Paper}>
                     <Table>
                         <TableHead>

@@ -1,5 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import theme from '../theme';
+import { CssBaseline } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
 import socketIOClient from 'socket.io-client';
 import serverLocation from './server.json';
 import showDialog from '../Dialog/show';
@@ -12,17 +15,17 @@ import * as gameplay from '../Match/gameplay';
 var socket = socketIOClient(serverLocation);
 var connectedOnce = false;
 
-ReactDOM.render(<Connecting />, document.getElementById('root'));
+ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Connecting /></ThemeProvider>, document.getElementById('root'));
 
 socket.on('connect', () => {
     if (!connectedOnce) {
         connectedOnce = true;
-        ReactDOM.render(<Home />, document.getElementById('root'));
+        ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Home /></ThemeProvider>, document.getElementById('root'));
     }
 });
 
 function displayConnectionFail(error) {
-    ReactDOM.render(<ConnectFailed error={error.toString()} />, document.getElementById('root'));
+    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><ConnectFailed error={error.toString()} /></ThemeProvider>, document.getElementById('root'));
     socket.disconnect();
 }
 
@@ -51,7 +54,7 @@ socket.on('joinMatch', () => {
 
 socket.on('matchUpdate', matchInfo => {
     if (!matchInfo.started)
-        ReactDOM.render(<Lobby matchInfo={matchInfo} />, document.getElementById('root'));
+        ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Lobby matchInfo={matchInfo} /></ThemeProvider>, document.getElementById('root'));
 });
 
 socket.on('matchStart', matchInfo => gameplay.playMatch(matchInfo, socket.id));

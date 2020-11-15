@@ -54,6 +54,8 @@ function Results(props) {
             break;
     }
 
+    (new Audio('/endMatch.mp3')).play();
+
     return (
         <div>
             <div className={classes.root}>
@@ -94,7 +96,7 @@ function Results(props) {
                                 <br />
                                 <span className={playerClass(game.players.a)}>{game.players.a.name}</span> <img className={classes.counterImage} src="/a.png" /> vs <img className={classes.counterImage} src="/b.png" /> <span className={playerClass(game.players.b)}>{game.players.b.name}</span>
                                 <br />
-                                {game.outcome == null ? 'Draw' : <span>Winner: <img className={classes.counterImage} src={`/${game.outcome}.png`} /></span>}
+                                {game.outcome == false ? 'Draw' : <span>Winner: <img className={classes.counterImage} src={`/${game.outcome}.png`} /></span>}
                             </Typography>
                         </div>
                     ))}
