@@ -1,7 +1,8 @@
 const cfg = require('./cfg');
 const maxUsernameLength = 12;
 const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 áéíóúÁÉÍÓÚ!"£$€%^&*()-=_+[]{};\'#:@~,./<>?\\|`¬¦';
-const playersAllowed = [1, 100];
+const playersAllowed = [1, 32];
+const maxGamesAllowed = [1, 12];
 const turnTimesAllowed = [0, 1000];
 
 const codeLength = 6;
@@ -11,7 +12,8 @@ const io = require("socket.io")(cfg.port, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
-    }
+    },
+    pingTimeout: 60000,
 });
 
 function generateUsername(socket) {
@@ -87,6 +89,9 @@ io.on('connection', socket => {
             && Number.isInteger(options.players)
             && options.players >= playersAllowed[0]
             && options.players <= playersAllowed[1]
+            && Number.isInteger(options.gameMax)
+            && options.gameMax >= maxGamesAllowed[0]
+            && options.gameMax <= maxGamesAllowed[1]
             && typeof options.turnTime == 'number'
             && options.turnTime >= turnTimesAllowed[0]
             && options.turnTime <= turnTimesAllowed[1]
@@ -95,6 +100,7 @@ io.on('connection', socket => {
             createMatch(socket, {
                 public: options.public,
                 players: options.players,
+                gameMax: options.gameMax,
                 turnTime: options.turnTime,
                 runDownTimer: options.runDownTimer,
             });

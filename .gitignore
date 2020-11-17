@@ -1,4 +1,9 @@
 node_modules
 build/
+android/
+ios/
+resources/*
+!resources/icon.png
+!resources/splash.png
 server/cfg.json
 src/socket/server.json

@@ -1,0 +1,8 @@
+{
+    "appId": "com.flynna.eightconnectfour",
+    "appName": "8connect4",
+    "bundledWebRuntime": false,
+    "npmClient": "npm",
+    "webDir": "build",
+    "cordova": {}
+}

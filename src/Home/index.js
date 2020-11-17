@@ -26,7 +26,7 @@ function Home() {
 
     return (
         <div>
-            <Typography className={classes.title} variant="h3" gutterBottom><img className={classes.logoImage} src="/iconanimated2.png" alt="8connect4" /></Typography>
+            <Typography className={classes.title} variant="h3" gutterBottom><img className={classes.logoImage} src="/iconanimated.png" alt="8connect4" /></Typography>
 
             <Typography variant="body1" gutterBottom>
                 Play 8 games of connect 4 at once.

@@ -5,7 +5,8 @@ import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
 import showDialog from '../Dialog/show';
 import socket from '../socket';
-const allowedPlayers = [1, 100];
+const allowedPlayers = [1, 32];
+const maxGamesAllowed = [1, 12];
 
 const useStyles = makeStyles((theme) => ({
     formControl: {
@@ -36,9 +37,24 @@ const timerMarksFormat = n => `${timerMarks[n]}s`;
 var options = {
     public: false,
     players: 9,
+    gameMax: 4,
     turnTime: 8,
     runDownTimer: true,
 };
+
+function NumberTweaker(props) {
+    return (
+        <ButtonGroup size="small">
+            <Button onClick={() => props.fn(-Infinity)}>&lt;&lt;</Button>
+            <Button onClick={() => props.fn(-10)}>- -</Button>
+            <Button onClick={() => props.fn(-1)}>-</Button>
+            <Button disabled>{props.state}</Button>
+            <Button onClick={() => props.fn(+1)}>+</Button>
+            <Button onClick={() => props.fn(+10)}>++</Button>
+            <Button onClick={() => props.fn(+Infinity)}>&gt;&gt;</Button>
+        </ButtonGroup>
+    );
+}
 
 function MatchOptions() {
     const classes = useStyles();
@@ -54,6 +70,13 @@ function MatchOptions() {
         if (options.players < allowedPlayers[0]) options.players = allowedPlayers[0];
         if (options.players > allowedPlayers[1]) options.players = allowedPlayers[1];
         setPlayers(options.players);
+    };
+    const [gameMax, setGameMax] = React.useState(options.gameMax);
+    const changeGameMax = change => {
+        options.gameMax += change;
+        if (options.gameMax < maxGamesAllowed[0]) options.gameMax = maxGamesAllowed[0];
+        if (options.gameMax > maxGamesAllowed[1]) options.gameMax = maxGamesAllowed[1];
+        setGameMax(options.gameMax);
     };
     const [turnTime, setTurnTime] = React.useState(timerMarks.indexOf(options.turnTime));
     const handleTurnTimeChange = (event, value) => {
@@ -85,15 +108,14 @@ function MatchOptions() {
             
             <FormControl className={classes.formControl}>
                 <FormLabel style={{marginBottom: 5}}>Max players</FormLabel>
-                <ButtonGroup size="small">
-                    <Button onClick={() => changePlayers(-Infinity)}>&lt;&lt;</Button>
-                    <Button onClick={() => changePlayers(-10)}>- -</Button>
-                    <Button onClick={() => changePlayers(-1)}>-</Button>
-                    <Button disabled>{players}</Button>
-                    <Button onClick={() => changePlayers(+1)}>+</Button>
-                    <Button onClick={() => changePlayers(+10)}>++</Button>
-                    <Button onClick={() => changePlayers(+Infinity)}>&gt;&gt;</Button>
-                </ButtonGroup>
+                <NumberTweaker fn={changePlayers} state={players} />
+            </FormControl>
+
+            <Divider />
+
+            <FormControl className={classes.formControl}>
+                <FormLabel style={{marginBottom: 5}}>Max games per player per colour</FormLabel>
+                <NumberTweaker fn={changeGameMax} state={gameMax} />
             </FormControl>
 
             {/*<FormControl className={classes.formControl}>

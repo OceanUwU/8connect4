@@ -66,6 +66,7 @@ function playMatch(startingMatchInfo, sentId) {
     gamesLeft = games.length;
     ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
         document.getElementById('controller').appendChild(controller.canvas);
+        controller.canvas.style.touchAction = 'none';
         document.getElementById('maxGames').innerHTML = gamesLeft;
         document.getElementById('gamesLeft').innerHTML = gamesLeft;
         for (let i in games)

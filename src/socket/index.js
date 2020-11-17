@@ -12,7 +12,9 @@ import Home from '../Home';
 import Lobby from '../Lobby';
 import * as gameplay from '../Match/gameplay';
 
-var socket = socketIOClient(serverLocation);
+var socket = socketIOClient(serverLocation, {
+    transports: ['websocket'],
+});
 var connectedOnce = false;
 
 ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Connecting /></ThemeProvider>, document.getElementById('root'));
@@ -25,8 +27,12 @@ socket.on('connect', () => {
 });
 
 function displayConnectionFail(error) {
-    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><ConnectFailed error={error.toString()} /></ThemeProvider>, document.getElementById('root'));
-    socket.disconnect();
+    setTimeout(() => {
+        if (socket.disconnected) {
+            ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><ConnectFailed error={error.toString()} /></ThemeProvider>, document.getElementById('root'));
+            socket.disconnect();
+        }
+    }, 10000);
 }
 
 socket.on('connect_error', displayConnectionFail);
