@@ -58,7 +58,7 @@ function playMatch(startingMatchInfo, sentId) {
 
         games.push({
             id: i,
-            name: (i > gameNameChars.length ? `${gameNameChars[~~(i/gameNameChars.length)]}${gameNameChars[i%gameNameChars.length]}` : gameNameChars[i]),
+            name: (i+1 > gameNameChars.length ? `${gameNameChars[~~(i/gameNameChars.length)]}${gameNameChars[i%gameNameChars.length]}` : gameNameChars[i]),
             players: game.players,
             state: state,
         });
