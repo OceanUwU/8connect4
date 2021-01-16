@@ -94,7 +94,6 @@ class Match {
 
         let playerList = Object.keys(this.players);
         let n = 0;
-        console.log(this.gameMax)
         for (let i = 0; i < playerList.length; i++)
             for (let j = 1; j <= (playerList.length > this.gameMax ? this.gameMax : (playerList.length == 1 ? 1 : playerList.length - 1)); j++) {
                 let b = ((i + j) >= playerList.length ? (i-playerList.length)+j : i+j);
