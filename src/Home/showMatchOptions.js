@@ -40,6 +40,7 @@ var options = {
     gameMax: 4,
     turnTime: 8,
     runDownTimer: true,
+    ...localStorage.MatchOptions ? JSON.parse(localStorage.MatchOptions) : {}
 };
 
 function NumberTweaker(props) {
@@ -161,6 +162,7 @@ async function showMatchOptions() {
         buttonText: 'Create',
         buttonAction: () => {
             dialog.handleClose();
+            localStorage.MatchOptions = JSON.stringify(options);
             socket.emit('createMatch', options);
         },
     }, <MatchOptions />);
