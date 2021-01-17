@@ -62,13 +62,13 @@ class Match {
         if (!this.started) {
             delete this.players[player];
             
-            if (Object.keys(this.players).length == 1)
+            if (!this.players.hasOwnProperty(this.host))
                 this.host = Object.keys(this.players)[0];
-
-            this.matchUpdate();
 
             if (Object.keys(this.players).length == 0)
                 delete matches[this.code];
+            else
+                this.matchUpdate();
         }
     }
 
