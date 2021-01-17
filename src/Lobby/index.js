@@ -5,6 +5,8 @@ import MeetingRoomIcon from '@material-ui/icons/MeetingRoom';
 import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
 import StarsIcon from '@material-ui/icons/Stars';
+import StarBorderIcon from '@material-ui/icons/StarBorder';
+import ClearIcon from '@material-ui/icons/Clear';
 import socket from '../socket';
 
 const useStyles = makeStyles({
@@ -39,9 +41,10 @@ function Lobby(props) {
     const classes = useStyles();
 
     let tableBody = [];
+    let amHost = socket.id.startsWith(props.matchInfo.host);
     for (let i = 0; i < props.matchInfo.maxPlayers; i++) {
         let content = '';
-        let you = false
+        let you = false;
         if (i in props.matchInfo.players) {
             content = props.matchInfo.players[i].name;
             you = socket.id.startsWith(props.matchInfo.players[i].id);
@@ -55,6 +58,14 @@ function Lobby(props) {
                         </Tooltip>
                     : null}
                     {you ? <span className={classes.you}>{content}</span> : content}
+                    {i in props.matchInfo.players && amHost && !you ? [
+                        <Tooltip title="Kick - remove this player from this lobby.">
+                            <IconButton size="small" onClick={() => socket.emit('kick', props.matchInfo.players[i].id)}><ClearIcon fontSize="inherit" /></IconButton>
+                        </Tooltip>,
+                        <Tooltip title="Promote - transfer your host privileges to this player." onClick={() => socket.emit('promote', props.matchInfo.players[i].id)}>
+                            <IconButton size="small"><StarBorderIcon fontSize="inherit" /></IconButton>
+                        </Tooltip>
+                    ] : null}
                 </TableCell>
             </TableRow>
         );
@@ -64,7 +75,6 @@ function Lobby(props) {
         (new Audio(`/countdown/${props.matchInfo.startTimer}.mp3`)).play();
     }
 
-    let amHost = socket.id.startsWith(props.matchInfo.host);
 
     return (
         <div>

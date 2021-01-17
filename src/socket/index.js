@@ -46,6 +46,16 @@ socket.on('err', (error='Unknown error', title='Error:') => {
     });
 });
 
+socket.on('kicked', kicker => {
+    showDialog({
+        required: true,
+        title: 'Kicked!',
+        description: `${kicker} kicked you from the lobby.`,
+        buttonText: 'Back Home',
+        buttonAction: () => window.location.reload(),
+    });
+});
+
 /*
 socket.on('disconnect', () => {
     setTimeout(() => {

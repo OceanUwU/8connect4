@@ -106,6 +106,16 @@ io.on('connection', socket => {
             });
     });
 
+    socket.on('kick', toKick => {
+        if (socket.ingame)
+            matches[socket.ingame].kick(toKick, socket.id);
+    });
+
+    socket.on('promote', toPromote => {
+        if (socket.ingame)
+            matches[socket.ingame].promote(toPromote, socket.id);
+    });
+
     socket.on('startMatch', () => {
         if (socket.ingame)
             matches[socket.ingame].startStartTimer(socket.id);

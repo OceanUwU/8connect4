@@ -72,6 +72,29 @@ class Match {
         }
     }
 
+    kick(player, kicker) {
+        if (kicker == this.host) {
+            let toKick = Object.keys(this.players).find(p => p.startsWith(player));
+            if (toKick != null && toKick != kicker) {
+                this.leave(toKick);
+                let socket = io.sockets.sockets.get(toKick);
+                socket.emit('kicked', io.sockets.sockets.get(kicker).username);
+                socket.disconnect();
+                this.matchUpdate();
+            }
+        }
+    }
+
+    promote(player, promoter) {
+        if (promoter == this.host) {
+            let toPromote = Object.keys(this.players).find(p => p.startsWith(player));
+            if (toPromote != null && toPromote != promoter) {
+                this.host = toPromote;
+                this.matchUpdate();
+            }
+        }
+    }
+
     startStartTimer(player) {
         if (player == this.host && !this.started) {
             this.started = true;
@@ -91,7 +114,6 @@ class Match {
     }
 
     start() {
-
         let playerList = Object.keys(this.players);
         let n = 0;
         for (let i = 0; i < playerList.length; i++)
