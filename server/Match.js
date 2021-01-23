@@ -202,7 +202,12 @@ class Match {
             } else {
                 move = generateMove(boards, this.turn, this.players[i].difficulty);
             }
-            this.move(i, this.turn, move);
+            if (Object.keys(this.players).some(player => !this.players[player].bot && this.games.some(game => game.outcome == null && (game.players[this.turn] == player || game.players[this.turn == 'a' ? 'b' : 'a'] == player)))) {
+                this.hover(i, move);
+                setTimeout(() => this.move(i, this.turn, move), 500);
+            } else {
+                this.move(i, this.turn, move);
+            }
         }
     }
 
