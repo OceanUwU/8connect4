@@ -108,6 +108,15 @@ function GameImage(props) {
     );
 }
 
+const turnTakenIndicatorSize = 13;
+function TurnTakenIndicator(props) {
+    return (
+        <svg height={props.size} width={props.size}>
+            <circle id={`playerTurnIndicator-${props.player}`} cx={props.size/2} cy={props.size/2} r={props.size/2} fill="red" />
+        </svg>
+    );
+}
+
 function PlayerGames(props) {
     const classes = useStyles();
     let gameRowClass = props.self ? classes.playingGames : classes.otherGames;
@@ -118,11 +127,11 @@ function PlayerGames(props) {
                 props.self
                 ?
                 <div>
-                    <Typography variant="h4">{props.player.name}</Typography>
+                    <Typography variant="h4">{props.player.name} <TurnTakenIndicator size={23} player={props.player.id.slice(0, 6)} /></Typography>
                     <Divider />
                 </div>
                 :
-                <Typography variant="h6" gutterBottom>{props.player.name}</Typography>
+                <Typography variant="h6" gutterBottom>{props.player.name} <TurnTakenIndicator size={14} player={props.player.id} /></Typography>
             }
             <div className={props.self ? classes.playingGamesContainer : classes.otherGamesContainer}>
                 <div className={gameRowClass}>

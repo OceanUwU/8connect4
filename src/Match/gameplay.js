@@ -80,15 +80,21 @@ function switchTurn(newTurn) {
     document.getElementById('turnNumber').innerHTML = ++turnNumber;
     turn = newTurn;
     turnTimerEnd = Date.now() + matchInfo.turnTime;
-    for (let element of [...document.getElementsByClassName(`game-${newTurn == 'a' ? 'b' : 'a'}`), ...document.getElementsByClassName(`colour-indicator-${newTurn == 'a' ? 'b' : 'a'}`)])
+    for (let element of [...document.getElementsByClassName(`game-${turn == 'a' ? 'b' : 'a'}`), ...document.getElementsByClassName(`colour-indicator-${turn == 'a' ? 'b' : 'a'}`)])
         element.classList.add('inactive-game');
-    for (let element of [...document.getElementsByClassName(`game-${newTurn}`), ...document.getElementsByClassName(`colour-indicator-${newTurn}`)])
+    for (let element of [...document.getElementsByClassName(`game-${turn}`), ...document.getElementsByClassName(`colour-indicator-${turn}`)])
         element.classList.remove('inactive-game');
+    setTimeout(() => {
+        for (let element of [...document.getElementsByClassName(`game-${turn == 'a' ? 'b' : 'a'}`), ...document.getElementsByClassName(`colour-indicator-${turn == 'a' ? 'b' : 'a'}`)])
+            element.classList.add('inactive-game');
+        for (let element of [...document.getElementsByClassName(`game-${turn}`), ...document.getElementsByClassName(`colour-indicator-${turn}`)])
+            element.classList.remove('inactive-game');
+    }, 50);
     for (let game of games) {
         game.hover = null;
     }
-    document.getElementById('turnIndicator').src = `/${newTurn}.png`;
-    controller.turnChange(newTurn);
+    document.getElementById('turnIndicator').src = `/${turn}.png`;
+    controller.turnChange(turn);
     if (turnNumber > 1)
         startTurnAudio.play();
 }
@@ -121,7 +127,12 @@ function drawCounter(image, column, row) {
         ctx.drawImage(image, ((boxSize+gridlineSize)*Number(column))+gridlineSize, (boxSize+gridlineSize)*(Number(row)+1), boxSize, boxSize);
 }
 
-function drawBoard(game, overlayImage = null) {
+function checkLine(a,b,c,d) {
+    // Check first cell non-zero and all cells match
+    return ((a !== null) && (a === b) && (a === c) && (a === d));
+}
+
+function drawBoard(game, overlayImage = null, isDraw = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
 
     //draw gridlines
@@ -169,8 +180,57 @@ function drawBoard(game, overlayImage = null) {
     }
 
     if (overlayImage != null && overlayImage.complete) {
+        if (!isDraw) {
+            let winner;
+            let winLocation;
+
+            //Check down
+            for (let r = 0; r < 3; r++)
+                for (let c = 0; c < 7; c++)
+                    if (checkLine(game.state[r][c], game.state[r+1][c], game.state[r+2][c], game.state[r+3][c])) {
+                        winner = game.state[r][c];
+                        winLocation = [r,c,r+1,c,r+2,c,r+3,c];
+                    }
+        
+            //Check right
+            for (let r = 0; r < 6; r++)
+                for (let c = 0; c < 4; c++)
+                    if (checkLine(game.state[r][c], game.state[r][c+1], game.state[r][c+2], game.state[r][c+3])) {
+                        winner = game.state[r][c];
+                        winLocation = [r,c,r,c+1,r,c+2,r,c+3];
+                    }
+        
+            //Check down-right
+            for (let r = 0; r < 3; r++)
+                for (let c = 0; c < 4; c++)
+                    if (checkLine(game.state[r][c], game.state[r+1][c+1], game.state[r+2][c+2], game.state[r+3][c+3])) {
+                        winner = game.state[r][c];
+                        winLocation = [r,c,r+1,c+1,r+2,c+2,r+3,c+3];
+                    }
+        
+            //Check down-left
+            for (let r = 3; r < 6; r++)
+                for (let c = 0; c < 4; c++)
+                    if (checkLine(game.state[r][c], game.state[r-1][c+1], game.state[r-2][c+2], game.state[r-3][c+3])) {
+                        winner = game.state[r][c];
+                        winLocation = [r,c,r-1,c+1,r-2,c+2,r-3,c+3];
+                    }
+            
+            ctx.fillStyle = {a: '#f58600af', b: '#03ffffaf'}[winner];
+            for (let i = 0; i < 4; i++)
+                ctx.fillRect(
+                    ((boxSize+gridlineSize)*Number(winLocation[i*2+1]))+gridlineSize,
+                    (boxSize+gridlineSize)*(Number(winLocation[i*2])+1),
+                    boxSize, boxSize
+                );
+            /*ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(((boxSize+gridlineSize)*Number(winLocation[1]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[0])+1));
+            ctx.lineTo(((boxSize+gridlineSize)*Number(winLocation[3]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[2])+1));
+            ctx.stroke();*/
+        }
         ctx.globalAlpha = 0.75;
-        ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);    
+        ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = 1; //reset alpha
     }
     
@@ -189,7 +249,8 @@ function outcomeDecided(boardId, outcome) {
 
     for (let i of document.getElementsByClassName(`game${boardId}`)) {
         i.classList.add('game-outcome-decided');
-        let relativeOutcome, glowColor;
+        let relativeOutcome;
+        let glowColor;
         if (outcome == false) {
             relativeOutcome = 'draw';
             glowColor = 'red';
@@ -200,7 +261,7 @@ function outcomeDecided(boardId, outcome) {
             relativeOutcome = 'loss';
             glowColor = 'grey';
         }
-        i.src = drawBoard(games[boardId], images.outcomeOverlay[relativeOutcome]);
+        i.src = drawBoard(games[boardId], images.outcomeOverlay[relativeOutcome], outcome == false);
     }
 
     gameEndAudio.play();
@@ -213,7 +274,7 @@ function endMatch(results) {
     }
 
     for (let game of games) {
-        game.src = drawBoard(game);
+        game.src = drawBoard(game, images.outcomeOverlay.end, game.outcome == false);
         for (let i in game.players) {
             game.players[i] = matchInfo.players.find(player => player.id == game.players[i]);
         }
@@ -227,6 +288,10 @@ function endMatch(results) {
     intervals = [];
 }
 
+function turnStatus(player, status) {
+    document.getElementById(`playerTurnIndicator-${player}`).setAttribute('fill', status ? 'green' : 'red');
+}
+
 export {
     playMatch,
     hover,
@@ -236,4 +301,5 @@ export {
     switchTurn,
     outcomeDecided,
     endMatch,
+    turnStatus,
 };

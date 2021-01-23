@@ -3,7 +3,22 @@ const { matches, io } = require('./');
 
 const boardWidth = 7;
 const opposite = {'a': 'b', 'b': 'a'};
+const difficulties = ['E', 'M', 'H'];
+const generateMove = require('./bot');
+const defaultPlayer = {
+    score: 0,
+    finished: false,
+    takenTurn: false,
+};
 
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
 
 class Match {
     constructor(options) {
@@ -19,14 +34,15 @@ class Match {
         this.gameMax = options.gameMax;
         this.games = [];
         this.turn = 'a';
-        this.turnNum = 1;
+        this.turnNum = 0;
         this.host = null;
     }
 
     playerInfo() {
         return Object.keys(this.players).map(player => ({
             id: player.slice(0,6),
-            name: this.players[player].name
+            name: this.players[player].name,
+            bot: this.players[player].bot,
         }));
     }
 
@@ -48,10 +64,10 @@ class Match {
 
     join(player) {
         this.players[player] = {
-            score: 0,
-            finished: false,
-            takenTurn: false,
-            name: io.sockets.sockets.get(player).username
+            ...defaultPlayer,
+            name: io.sockets.sockets.get(player).username,
+            bot: false,
+            difficulty: 1,
         }
         if (Object.keys(this.players).length == 1)
             this.host = Object.keys(this.players)[0];
@@ -65,30 +81,53 @@ class Match {
             if (!this.players.hasOwnProperty(this.host))
                 this.host = Object.keys(this.players)[0];
 
-            if (Object.keys(this.players).length == 0)
+            if (Object.keys(this.players).length == 0 || !(Object.values(this.players).some(p => !p.bot))) //if there are no players left (not including bots)
                 delete matches[this.code];
             else
                 this.matchUpdate();
+        } else {
+            this.players[player].bot = true;
+            this.players[player].name += '(E🤖)';
+            let boards = this.games.filter(game => game.outcome == null && game.players[this.turn] == player);
+            if (boards.length > 0)
+                this.move(player, this.turn, generateMove(boards, this.turn, this.players[player].difficulty));
+        }
+    }
+
+    addBot(difficulty, adder) {
+        if (adder == this.host && !this.started && Object.keys(this.players).length < this.maxPlayers && difficulties.hasOwnProperty(difficulty)) {
+            difficulty = Number(difficulty);
+            this.players[String(Math.random()).slice(2, 12)] = {
+                ...defaultPlayer,
+                name: `${difficulties[difficulty]}🤖${String(Math.random()).slice(2, 5)}`,
+                bot: true,
+                difficulty: difficulty+1,
+            }
+            this.matchUpdate();
         }
     }
 
     kick(player, kicker) {
-        if (kicker == this.host) {
+        if (kicker == this.host && !this.started) {
             let toKick = Object.keys(this.players).find(p => p.startsWith(player));
             if (toKick != null && toKick != kicker) {
-                this.leave(toKick);
-                let socket = io.sockets.sockets.get(toKick);
-                socket.emit('kicked', io.sockets.sockets.get(kicker).username);
-                socket.disconnect();
+                if (this.players[toKick].bot) {
+                    delete this.players[toKick];
+                } else {
+                    this.leave(toKick);
+                    let socket = io.sockets.sockets.get(toKick);
+                    socket.emit('kicked', io.sockets.sockets.get(kicker).username);
+                    socket.disconnect();
+                }
                 this.matchUpdate();
             }
         }
     }
 
     promote(player, promoter) {
-        if (promoter == this.host) {
+        if (promoter == this.host && !this.started) {
             let toPromote = Object.keys(this.players).find(p => p.startsWith(player));
-            if (toPromote != null && toPromote != promoter) {
+            if (toPromote != null && toPromote != promoter && !this.players[toPromote].bot) {
                 this.host = toPromote;
                 this.matchUpdate();
             }
@@ -114,13 +153,17 @@ class Match {
     }
 
     start() {
+        this.turnNum = 1;
         let playerList = Object.keys(this.players);
+        shuffleArray(playerList);
         let n = 0;
         for (let i = 0; i < playerList.length; i++)
             for (let j = 1; j <= (playerList.length > this.gameMax ? this.gameMax : (playerList.length == 1 ? 1 : playerList.length - 1)); j++) {
                 let b = ((i + j) >= playerList.length ? (i-playerList.length)+j : i+j);
                 this.games.push(new Game(n++, {a: playerList[i], b: playerList[b]}, this));
             }
+        shuffleArray(this.games);
+        this.games.forEach((game, index) => game.id = index);
 
         let matchInfo = {
             players: this.playerInfo(),
@@ -140,14 +183,27 @@ class Match {
 
     startTurn() {
         this.allowMoves = true;
-        for (let i of Object.keys(this.players).filter(player => this.games.find(game => game.outcome == null && game.players[this.turn] == player) != null)) {
+        for (let i of Object.keys(this.players).filter(player => this.games.some(game => game.outcome == null && game.players[this.turn] == player))) {
             this.players[i].takenTurn = false;
+            io.to(this.code).emit('ts', i.slice(0, 6), false);
         }
 
         io.to(this.code).emit('turnSwitch', this.turn);
         
         let currentTurnNum = this.turnNum;
         setTimeout((() => this.endTurn(currentTurnNum)).bind(this), this.turnTime+1000);
+
+        //move all bots
+        for (let i of Object.keys(this.players).filter(p => this.players[p].bot && !this.players[p].takenTurn)) {
+            let boards = this.games.filter(game => game.outcome == null && game.players[this.turn] == i);
+            let move;
+            if (this.turnNum <= 2) { //if it is the first turn on either side
+                move = Math.floor(Math.random() * boardWidth);
+            } else {
+                move = generateMove(boards, this.turn, this.players[i].difficulty);
+            }
+            this.move(i, this.turn, move);
+        }
     }
 
     endTurn(turnNum) {
@@ -173,7 +229,7 @@ class Match {
                 if (game.outcome == false) { //if the game was a draw
                     //add score to both players
                     for (let i of Object.values(game.players))
-                        this.players[i].score += 0.5;
+                        this.players[i].score += 1 / 2; //win amount divided by 2
                 } else { //if not draw
                     this.players[game.players[game.outcome]].score += 1; //add score to winner
                     this.players[game.players[opposite[game.outcome]]].score -= 0; //subtract score from loser
@@ -203,13 +259,13 @@ class Match {
             }, 3000);
         } else {
             this.turn = this.turn == 'a' ? 'b' : 'a'; //switch the turn
-            this.startTurn(); //start the next turn
             this.endingTurn = false;
+            this.startTurn(); //start the next turn
         }
     }
 
     move(player, colour, column) {
-        if (this.players[player].takenTurn) //if the player has already taken their turn
+        if (this.turnNum < 1 || this.players[player].takenTurn) //if the player has already taken their turn
             return;
         if (colour !== this.turn)
             return;
@@ -228,6 +284,7 @@ class Match {
             this.players[player].finished = true;
         if (moved) {
             this.players[player].takenTurn = true;
+            io.to(this.code).emit('ts', player.slice(0, 6), true);
             this.hover(player, null);
             if (!this.runDownTimer && Object.values(this.players).find(e => e.takenTurn == false) == null)
                 this.endTurn(this.turnNum);
@@ -237,7 +294,7 @@ class Match {
     }
 
     hover(player, column) {
-        if (this.players[player].takenTurn) //if the player has already taken their turn
+        if (this.turnNum < 1 || this.players[player].takenTurn) //if the player has already taken their turn
             return;
         if (!Number.isInteger(column) || column < 0 && column >= boardWidth)
             return;

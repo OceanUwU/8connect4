@@ -47,6 +47,13 @@ class CodeInput extends React.Component {
         socket.emit('joinMatch', this.state.code);
     }
 
+    componentDidMount() {
+        if (window.location.search.length > 1) {
+            this.setState({code: window.location.search.slice(1)}, () => this.tryCode());
+            window.history.pushState('', '', '/');
+        }
+    }
+
     render() {
         const { classes } = this.props;
 

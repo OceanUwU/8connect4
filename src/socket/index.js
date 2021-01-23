@@ -80,5 +80,6 @@ socket.on('move', (gameId, colour, column, row) => gameplay.move(gameId, colour,
 socket.on('takenTurn', colour => gameplay.takenTurn(colour));
 socket.on('outcomeDecided', (gameId, outcome) => gameplay.outcomeDecided(gameId, outcome));
 socket.on('endMatch', results => gameplay.endMatch(results));
+socket.on('ts', (player, status) => gameplay.turnStatus(player, status));
 
 export default socket;

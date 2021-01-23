@@ -12,7 +12,7 @@ for (let i of ['a', 'b']) {
     images.hover[i].src = `/hover_${i}.png`;
 }
 
-for (let i of ['win', 'loss', 'draw']) {
+for (let i of ['win', 'loss', 'draw', 'end']) {
     let img = new Image();
     img.src = `/outcome/${i}.png`;
     images.outcomeOverlay[i] = img;

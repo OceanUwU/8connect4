@@ -1,8 +1,8 @@
 const cfg = require('./cfg');
 const maxUsernameLength = 12;
 const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 áéíóúÁÉÍÓÚ!"£$€%^&*()-=_+[]{};\'#:@~,./<>?\\|`¬¦';
-const playersAllowed = [1, 32];
-const maxGamesAllowed = [1, 12];
+const playersAllowed = [1, 25];
+const maxGamesAllowed = [1, 4];
 const turnTimesAllowed = [0, 1000];
 
 const codeLength = 6;
@@ -55,7 +55,7 @@ io.on('connection', socket => {
             if (usernameAllowed && newName.length > 0 && newName.length <= maxUsernameLength)
                 socket.username = newName;
             else
-                generateUsername(socket)
+                generateUsername(socket);
         }
         
     });
@@ -104,6 +104,11 @@ io.on('connection', socket => {
                 turnTime: options.turnTime,
                 runDownTimer: options.runDownTimer,
             });
+    });
+
+    socket.on('bot', difficulty => {
+        if (socket.ingame)
+            matches[socket.ingame].addBot(difficulty, socket.id);
     });
 
     socket.on('kick', toKick => {

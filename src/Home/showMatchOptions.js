@@ -5,8 +5,8 @@ import PublicIcon from '@material-ui/icons/Public';
 import LockIcon from '@material-ui/icons/Lock';
 import showDialog from '../Dialog/show';
 import socket from '../socket';
-const allowedPlayers = [1, 32];
-const maxGamesAllowed = [1, 12];
+const allowedPlayers = [1, 25];
+const maxGamesAllowed = [1, 4];
 
 const useStyles = makeStyles((theme) => ({
     formControl: {
@@ -46,13 +46,11 @@ var options = {
 function NumberTweaker(props) {
     return (
         <ButtonGroup size="small">
-            <Button onClick={() => props.fn(-Infinity)}>&lt;&lt;</Button>
-            <Button onClick={() => props.fn(-10)}>- -</Button>
-            <Button onClick={() => props.fn(-1)}>-</Button>
+            <Button onClick={() => props.fn(-10)} disabled={props.state == props.min}>- -</Button>
+            <Button onClick={() => props.fn(-1)} disabled={props.state == props.min}>-</Button>
             <Button disabled>{props.state}</Button>
-            <Button onClick={() => props.fn(+1)}>+</Button>
-            <Button onClick={() => props.fn(+10)}>++</Button>
-            <Button onClick={() => props.fn(+Infinity)}>&gt;&gt;</Button>
+            <Button onClick={() => props.fn(+1)} disabled={props.state == props.max}>+</Button>
+            <Button onClick={() => props.fn(+10)} disabled={props.state == props.max}>++</Button>
         </ButtonGroup>
     );
 }
@@ -109,14 +107,14 @@ function MatchOptions() {
             
             <FormControl className={classes.formControl}>
                 <FormLabel style={{marginBottom: 5}}>Max players</FormLabel>
-                <NumberTweaker fn={changePlayers} state={players} />
+                <NumberTweaker fn={changePlayers} min={allowedPlayers[0]} max={allowedPlayers[1]} state={players} />
             </FormControl>
 
             <Divider />
 
             <FormControl className={classes.formControl}>
                 <FormLabel style={{marginBottom: 5}}>Max games per player per colour</FormLabel>
-                <NumberTweaker fn={changeGameMax} state={gameMax} />
+                <NumberTweaker fn={changeGameMax} min={maxGamesAllowed[0]} max={maxGamesAllowed[1]} state={gameMax} />
             </FormControl>
 
             {/*<FormControl className={classes.formControl}>
