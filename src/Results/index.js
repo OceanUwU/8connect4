@@ -95,8 +95,8 @@ function Results(props) {
                                 Game {game.name}
                                 <br />
                                 <span className={playerClass(game.players.a)}>{game.players.a.name}</span> <img className={classes.counterImage} src="/a.png" /> vs <img className={classes.counterImage} src="/b.png" /> <span className={playerClass(game.players.b)}>{game.players.b.name}</span>
-                                <br />
-                                {game.outcome == false ? 'Draw' : <span>Winner: <img className={classes.counterImage} src={`/${game.outcome}.png`} /></span>}
+                                {/*<br />
+                                {game.outcome == false ? 'Draw' : <span>Winner: <img className={classes.counterImage} src={`/${game.outcome}.png`} /></span>}*/}
                             </Typography>
                         </div>
                     ))}

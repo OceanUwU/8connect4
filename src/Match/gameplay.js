@@ -33,6 +33,9 @@ var canvas = document.createElement('canvas');
 canvas.width = (boxSize * boardWidth) + ((boardWidth + 1) * gridlineSize);
 canvas.height = (boxSize + gridlineSize) * (boardHeight + 1);
 var ctx = canvas.getContext('2d');
+ctx.font = `30px Roboto`;
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
 
 function showTimer() {
     let timeLeft = (turnTimerEnd - Date.now()) / 1000;
@@ -61,6 +64,7 @@ function playMatch(startingMatchInfo, sentId) {
             name: (i+1 > gameNameChars.length ? `${gameNameChars[~~(i/gameNameChars.length)]}${gameNameChars[i%gameNameChars.length]}` : gameNameChars[i]),
             players: game.players,
             state: state,
+            order: JSON.parse(JSON.stringify(state)),
         });
     }
     gamesLeft = games.length;
@@ -108,6 +112,7 @@ function hover(gameId, colour, column) {
 function move(gameId, colour, column, row) {
     let game = games[gameId];
     game.state[column][row] = colour;
+    game.order[column][row] = turnNumber;
     game.hover = null;
     drawBoardsOfId(gameId);
     if (!myId.startsWith(game.players[colour]))
@@ -132,7 +137,7 @@ function checkLine(a,b,c,d) {
     return ((a !== null) && (a === b) && (a === c) && (a === d));
 }
 
-function drawBoard(game, overlayImage = null, isDraw = false) {
+function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
 
     //draw gridlines
@@ -147,6 +152,10 @@ function drawBoard(game, overlayImage = null, isDraw = false) {
             let piece = game.state[i][j];
             if (piece != null) {
                 drawCounter(images[piece], j, i);
+                if (showOrder) {
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(String(game.order[i][j]), ((boxSize+gridlineSize)*Number(j))+gridlineSize+(boxSize/2), (boxSize+gridlineSize)*(Number(i)+1)+(boxSize/2)+3);
+                }
             }
         }
     
@@ -182,14 +191,14 @@ function drawBoard(game, overlayImage = null, isDraw = false) {
     if (overlayImage != null && overlayImage.complete) {
         if (!isDraw) {
             let winner;
-            let winLocation;
+            let winLocation = [];
 
             //Check down
             for (let r = 0; r < 3; r++)
                 for (let c = 0; c < 7; c++)
                     if (checkLine(game.state[r][c], game.state[r+1][c], game.state[r+2][c], game.state[r+3][c])) {
                         winner = game.state[r][c];
-                        winLocation = [r,c,r+1,c,r+2,c,r+3,c];
+                        winLocation.push([r,c],[r+1,c],[r+2,c],[r+3,c]);
                     }
         
             //Check right
@@ -197,7 +206,7 @@ function drawBoard(game, overlayImage = null, isDraw = false) {
                 for (let c = 0; c < 4; c++)
                     if (checkLine(game.state[r][c], game.state[r][c+1], game.state[r][c+2], game.state[r][c+3])) {
                         winner = game.state[r][c];
-                        winLocation = [r,c,r,c+1,r,c+2,r,c+3];
+                        winLocation.push([r,c],[r,c+1],[r,c+2],[r,c+3]);
                     }
         
             //Check down-right
@@ -205,7 +214,7 @@ function drawBoard(game, overlayImage = null, isDraw = false) {
                 for (let c = 0; c < 4; c++)
                     if (checkLine(game.state[r][c], game.state[r+1][c+1], game.state[r+2][c+2], game.state[r+3][c+3])) {
                         winner = game.state[r][c];
-                        winLocation = [r,c,r+1,c+1,r+2,c+2,r+3,c+3];
+                        winLocation.push([r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]);
                     }
         
             //Check down-left
@@ -213,16 +222,20 @@ function drawBoard(game, overlayImage = null, isDraw = false) {
                 for (let c = 0; c < 4; c++)
                     if (checkLine(game.state[r][c], game.state[r-1][c+1], game.state[r-2][c+2], game.state[r-3][c+3])) {
                         winner = game.state[r][c];
-                        winLocation = [r,c,r-1,c+1,r-2,c+2,r-3,c+3];
+                        winLocation.push([r,c],[r-1,c+1],[r-2,c+2],[r-3,c+3]);
                     }
             
             ctx.fillStyle = {a: '#f58600af', b: '#03ffffaf'}[winner];
-            for (let i = 0; i < 4; i++)
-                ctx.fillRect(
-                    ((boxSize+gridlineSize)*Number(winLocation[i*2+1]))+gridlineSize,
-                    (boxSize+gridlineSize)*(Number(winLocation[i*2])+1),
-                    boxSize, boxSize
-                );
+            let squaresDone = [];
+            for (let i of winLocation)
+                if (!squaresDone.some(square => JSON.stringify(square) == JSON.stringify(i))) {
+                    squaresDone.push(i);
+                    ctx.fillRect(
+                        ((boxSize+gridlineSize)*i[1])+gridlineSize,
+                        (boxSize+gridlineSize)*(i[0]+1),
+                        boxSize, boxSize
+                    );
+                }
             /*ctx.lineWidth = 5;
             ctx.beginPath();
             ctx.moveTo(((boxSize+gridlineSize)*Number(winLocation[1]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[0])+1));
@@ -274,7 +287,7 @@ function endMatch(results) {
     }
 
     for (let game of games) {
-        game.src = drawBoard(game, images.outcomeOverlay.end, game.outcome == false);
+        game.src = drawBoard(game, images.outcomeOverlay.end, game.outcome == false, true);
         for (let i in game.players) {
             game.players[i] = matchInfo.players.find(player => player.id == game.players[i]);
         }
