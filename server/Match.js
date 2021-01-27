@@ -1,7 +1,6 @@
 const Game = require('./Game');
 const { matches, io } = require('./');
 
-const boardWidth = 7;
 const opposite = {'a': 'b', 'b': 'a'};
 const difficulties = ['E', 'M', 'H'];
 const generateMove = require('./bot');
@@ -27,6 +26,9 @@ class Match {
         this.startTimer = 6;
         this.allowMoves = false;
         this.endingTurn = false;
+        this.lineLength = options.lineLength;
+        this.rows = options.rows;
+        this.columns = options.columns;
         this.turnTime = options.turnTime * 1000;
         this.runDownTimer = options.runDownTimer;
         this.maxPlayers = options.players;
@@ -38,6 +40,18 @@ class Match {
         this.host = null;
     }
 
+    setOptions(options) {
+        this.isPublic = options.public;
+        this.lineLength = options.lineLength;
+        this.rows = options.rows;
+        this.columns = options.columns;
+        this.turnTime = options.turnTime * 1000;
+        this.runDownTimer = options.runDownTimer;
+        this.maxPlayers = options.players;
+        this.gameMax = options.gameMax;
+        this.matchUpdate();
+    }
+
     playerInfo() {
         return Object.keys(this.players).map(player => ({
             id: player.slice(0,6),
@@ -46,19 +60,30 @@ class Match {
         }));
     }
 
+    matchInfo() {
+        return {
+            starting: this.started,
+            startTimer: this.startTimer,
+            host: this.host.slice(0, 6),
+            started: this.games.length > 1 ? true : false,
+            code: this.code,
+            options: {
+                public: this.isPublic,
+                lineLength: this.lineLength,
+                rows: this.rows,
+                columns: this.columns,
+                turnTime: Math.round(this.turnTime / 1000),
+                runDownTimer: this.runDownTimer,
+                players: this.maxPlayers,
+                gameMax: this.gameMax,
+            },
+            players: this.playerInfo()
+        };
+    }
+
     matchUpdate() {
         setTimeout(() => {
-            let matchInfo = {
-                starting: this.started,
-                startTimer: this.startTimer,
-                host: this.host.slice(0, 6),
-                started: this.games.length > 1 ? true : false,
-                public: this.isPublic,
-                code: this.code,
-                maxPlayers: this.maxPlayers,
-                players: this.playerInfo()
-            };
-            io.to(this.code).emit('matchUpdate', matchInfo);
+            io.to(this.code).emit('matchUpdate', this.matchInfo());
         }, 100);
     }
 
@@ -78,24 +103,32 @@ class Match {
         if (!this.started) {
             delete this.players[player];
             
-            if (!this.players.hasOwnProperty(this.host))
-                this.host = Object.keys(this.players)[0];
-
             if (Object.keys(this.players).length == 0 || !(Object.values(this.players).some(p => !p.bot))) //if there are no players left (not including bots)
                 delete matches[this.code];
+            else if (!this.players.hasOwnProperty(this.host))
+                this.host = Object.keys(this.players)[0];
             else
                 this.matchUpdate();
         } else {
             this.players[player].bot = true;
-            this.players[player].name += '(E🤖)';
-            let boards = this.games.filter(game => game.outcome == null && game.players[this.turn] == player);
-            if (boards.length > 0)
-                this.move(player, this.turn, generateMove(boards, this.turn, this.players[player].difficulty));
+            if (!(Object.values(this.players).some(p => !p.bot))) { //if there are no non-bot players left
+                if (this.turnNum > 0)
+                    this.games.forEach(game => game.outcome = false);
+                else
+                    this.ditchGame = true;
+            } else {
+                this.players[player].name += '(E🤖)';
+                let boards = this.games.filter(game => game.outcome == null && game.players[this.turn] == player);
+                if (boards.length > 0)
+                    this.move(player, this.turn, generateMove(boards, this.turn, this.players[player].difficulty, this.lineLength));
+            }
         }
     }
 
     addBot(difficulty, adder) {
         if (adder == this.host && !this.started && Object.keys(this.players).length < this.maxPlayers && difficulties.hasOwnProperty(difficulty)) {
+            if (Object.values(this.players).filter(p => p.bot).length >= 4)
+                return io.sockets.sockets.get(adder).emit('err', 'The maximum amount of bots in a match is 4.', 'Too many bots!');
             difficulty = Number(difficulty);
             this.players[String(Math.random()).slice(2, 12)] = {
                 ...defaultPlayer,
@@ -137,6 +170,7 @@ class Match {
     startStartTimer(player) {
         if (player == this.host && !this.started) {
             this.started = true;
+            delete this.rejoinCode;
             this.updateStartTimer();
         }
     }
@@ -175,8 +209,15 @@ class Match {
                 }
             })),
             turnTime: this.turnTime,
+            lineLength: this.lineLength,
+            rows: this.rows,
+            columns: this.columns,
+            options: this.matchInfo().options,
         };
         io.to(this.code).emit('matchStart', matchInfo);
+
+        if (this.ditchGame)
+            this.games.forEach(game => game.outcome = false);
 
         setTimeout(this.startTurn.bind(this), 250);
     }
@@ -198,9 +239,9 @@ class Match {
             let boards = this.games.filter(game => game.outcome == null && game.players[this.turn] == i);
             let move;
             if (this.turnNum <= 2) { //if it is the first turn on either side
-                move = Math.floor(Math.random() * boardWidth);
+                move = Math.floor(Math.random() * this.columns);
             } else {
-                move = generateMove(boards, this.turn, this.players[i].difficulty);
+                move = generateMove(boards, this.turn, this.players[i].difficulty, this.lineLength);
             }
             if (Object.keys(this.players).some(player => !this.players[player].bot && this.games.some(game => game.outcome == null && (game.players[this.turn] == player || game.players[this.turn == 'a' ? 'b' : 'a'] == player)))) {
                 this.hover(i, move);
@@ -219,7 +260,7 @@ class Match {
         for (let i of Object.keys(this.players).filter(player => !this.players[player].takenTurn)) { //for every player who hasn't taken their turn
             if (this.players[i].hover != null && this.move(i, this.turn, this.players[i].hover)) //if the player is hovering over a slot, try moving in that slot. if that move is successful,
                 continue; //go to the next player who hasnt moved
-            for (let k = 0; k < boardWidth; k++) //for every column of that game's board
+            for (let k = 0; k < this.columns; k++) //for every column of that game's board
                 if (this.move(i, this.turn, k)) //attempt to make a move in that column
                     continue; //stop attempting moves
         }
@@ -259,7 +300,7 @@ class Match {
             }
 
             setTimeout(() => {
-                io.to(this.code).emit('endMatch', results);
+                io.to(this.code).emit('endMatch', results, String(Math.random()).slice(2));
                 delete matches[this.code];
             }, 3000);
         } else {
@@ -274,7 +315,7 @@ class Match {
             return;
         if (colour !== this.turn)
             return;
-        if (!Number.isInteger(column) || column < 0 && column >= boardWidth)
+        if (!Number.isInteger(column) || column < 0 && column >= this.columns)
             return;
 
         let moved = false;
@@ -301,7 +342,7 @@ class Match {
     hover(player, column) {
         if (this.turnNum < 1 || this.players[player].takenTurn) //if the player has already taken their turn
             return;
-        if (!Number.isInteger(column) || column < 0 && column >= boardWidth)
+        if (!Number.isInteger(column) || column < 0 && column >= this.columns)
             return;
         for (let game of this.games.filter(e => e.players[this.turn] == player && e.outcome == null)) {
             this.players[player].hover = column;

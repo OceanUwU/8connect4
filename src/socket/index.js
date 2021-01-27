@@ -11,6 +11,8 @@ import ConnectFailed from './Connect/Failed';
 import Home from '../Home';
 import Lobby from '../Lobby';
 import * as gameplay from '../Match/gameplay';
+import defaultMatchOptions from '../Home/defaultMatchOptions.json';
+import showMatchOptions from '../Home/showMatchOptions';
 
 var socket = socketIOClient(serverLocation, {
     transports: ['websocket'],
@@ -41,8 +43,21 @@ socket.on('disconnect', displayConnectionFail);
 
 socket.on('err', (error='Unknown error', title='Error:') => {
     showDialog({
+        layer: 'err',
         title: title,
         description: error,
+    });
+});
+
+socket.on('noMatches', async () => {
+    let dialog = await showDialog({
+        title: 'No public matches available.',
+        description: 'Maybe create one yourself for people to join?',
+        buttonText: 'Create match with default options',
+        buttonAction: () => {
+            dialog.handleClose();
+            socket.emit('createMatch', {...defaultMatchOptions, public: true});
+        },
     });
 });
 
@@ -71,15 +86,17 @@ socket.on('joinMatch', () => {
 socket.on('matchUpdate', matchInfo => {
     if (!matchInfo.started)
         ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Lobby matchInfo={matchInfo} /></ThemeProvider>, document.getElementById('root'));
+    showMatchOptions.changeOptions(matchInfo.options);
 });
 
 socket.on('matchStart', matchInfo => gameplay.playMatch(matchInfo, socket.id));
 socket.on('turnSwitch', newTurn => gameplay.switchTurn(newTurn));
 socket.on('hover', (gameId, colour, column) => gameplay.hover(gameId, colour, column));
 socket.on('move', (gameId, colour, column, row) => gameplay.move(gameId, colour, column, row));
+socket.on('ts', (player, status) => gameplay.turnStatus(player, status));
 socket.on('takenTurn', colour => gameplay.takenTurn(colour));
 socket.on('outcomeDecided', (gameId, outcome) => gameplay.outcomeDecided(gameId, outcome));
-socket.on('endMatch', results => gameplay.endMatch(results));
-socket.on('ts', (player, status) => gameplay.turnStatus(player, status));
+socket.on('endMatch', (results, rjCode) => gameplay.endMatch(results, rjCode));
+socket.on('rejoin', code => window.location.href = `/?${code}`);
 
 export default socket;

@@ -48,7 +48,9 @@ class CodeInput extends React.Component {
     }
 
     componentDidMount() {
-        if (window.location.search.length > 1) {
+        /*if (window.location.search.startsWith('?$')) {
+            let p = window.location.search.slice('?$'.length);
+        } else */if (window.location.search.length > 1) {
             this.setState({code: window.location.search.slice(1)}, () => this.tryCode());
             window.history.pushState('', '', '/');
         }

@@ -53,11 +53,17 @@ const useStyles = makeStyles({
     },
 
     selfGameImage: {
-        width: 125,
+        maxWidth: 125,
+        maxHeight: 125,
+        width: 'auto',
+        height: 'auto',
     },
 
     otherGameImage: {
-        width: 100,
+        maxWidth: 100,
+        maxHeight: 100,
+        width: 'auto',
+        height: 'auto',
     },
 
     playingGamesContainer: {

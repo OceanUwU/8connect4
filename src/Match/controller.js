@@ -3,7 +3,7 @@ import socket from '../socket';
 
 const boxSize = 100;
 const gridlineSize = 4;
-const boardWidth = 7;
+var boardWidth = 7;
 
 var canvas = document.createElement('canvas');
 canvas.width = ((gridlineSize + boxSize) * boardWidth) + gridlineSize;
@@ -17,6 +17,11 @@ function turnChange(newTurn) {
     turn = newTurn;
     slot = null;
     render();
+}
+
+function setupController(matchInfo) {
+    boardWidth = matchInfo.columns;
+    canvas.width = ((gridlineSize + boxSize) * boardWidth) + gridlineSize;
 }
 
 function render(event = null) {
@@ -69,5 +74,6 @@ canvas.addEventListener('mousedown', move);
 
 export {
     canvas,
+    setupController,
     turnChange,
 };

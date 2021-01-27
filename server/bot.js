@@ -1,16 +1,13 @@
 const Game = require('./Game');
 
-var board;
-let w = 7;
-let h = 6;
+
 let scores = {
     1: 100000,
     2: -100000,
 };
-var player = 1;
 
 function nextSpace(b, x) { //finds the next space (from the bottom)
-    for (y = h - 1; y >= 0; y--){
+    for (y = b.length - 1; y >= 0; y--){
         if (b[y][x] == 0) {
             return y;
         }
@@ -18,7 +15,7 @@ function nextSpace(b, x) { //finds the next space (from the bottom)
     return -1;
 }
 
-function generateMove(boards, player, difficulty) {
+function generateMove(boards, player, difficulty, lineLength) {
     boards = JSON.parse(JSON.stringify(boards.map(board => board.state)).replace(new RegExp(`"${player}"`, 'g'), '1').replace(new RegExp(`"${player == 'a' ? 'b' : 'a'}"`, 'g'), '2').replace(new RegExp('null', 'g'), '0')); //deep clone of boards
     // AI to make its turn
     let bestScore = -Infinity;
@@ -34,11 +31,11 @@ function generateMove(boards, player, difficulty) {
                     continue; //go to the next board
                 board = boards[i];
                 board[rows[i]][j] = 1;
-                score += minimax(difficulty, false, 1);
+                score += minimax(board, lineLength, difficulty, false, 1);
                 board[rows[i]][j] = 0;
             }
 
-            if (score > bestScore || (score == bestScore && Math.random() > 0.3)) {
+            if (score > bestScore || (score == bestScore && Math.random() < 0.3)) {
                 bestScore = score;
                 move = j;
             }
@@ -48,39 +45,21 @@ function generateMove(boards, player, difficulty) {
     return move;
 }
 
-function score_position(player, player2, nr_moves) {
+const positionScores = [1000, 10, 1, 0.1, 0.01, 0.001, 0.0001];
+function score_position(board, lineLength, player, player2, nr_moves) {
     let score = 0
 
-    for (i = 1; i < h; i++) {
-        for (j = 1; j < w; j++) {
-            if ((countPieces(i, j, i + 4, j, player) == 3 && countPieces(i, j, i + 4, j, 0) == 1) || (countPieces(i, j, i, j + 4, player) == 3 && countPieces(i, j, i, j + 4, 0) == 1) ||
-                (countDiagonal(i, j, 0, player) == 3 && countDiagonal(i, j, 1, 0) == 1)) {
-                score += 1000;
-            }
-
-            if ((countPieces(i, j, i + 4, j, player) == 2 && countPieces(i, j, i + 4, j, 0) == 2) || (countPieces(i, j, i, j + 4, player) == 2 && countPieces(i, j, i, j + 4, 0) == 2) ||
-                (countDiagonal(i, j, 0, player) == 2 && countDiagonal(i, j, 1, 0) == 2)) {
-                score += 10;
-            }
-
-            if ((countPieces(i, j, i + 4, j, player) == 1 && countPieces(i, j, i + 4, j, 0) == 3) || (countPieces(i, j, i, j + 4, player) == 1 && countPieces(i, j, i, j + 4, 0) == 3) ||
-                (countDiagonal(i, j, 0, player) == 1 && countDiagonal(i, j, 1, 0) == 3)) {
-                score += 1;
-            }
-
-            if ((countPieces(i, j, i + 4, j, player2) == 3 && countPieces(i, j, i + 4, j, 0) == 1) || (countPieces(i, j, i, j + 4, player2) == 3 && countPieces(i, j, i, j + 4, 0) == 1) ||
-                (countDiagonal(i, j, 0, player2) == 3 && countDiagonal(i, j, 1, 0) == 1)) {
-                score -= 1000;
-            }
-
-            if ((countPieces(i, j, i + 4, j, player2) == 2 && countPieces(i, j, i + 4, j, 0) == 2) || (countPieces(i, j, i, j + 4, player2) == 2 && countPieces(i, j, i, j + 4, 0) == 2) ||
-                (countDiagonal(i, j, 0, player2) == 2 && countDiagonal(i, j, 1, 0) == 2)) {
-                score -= 10;
-            }
-
-            if ((countPieces(i, j, i + 4, j, player2) == 1 && countPieces(i, j, i + 4, j, 0) == 3) || (countPieces(i, j, i, j + 4, player2) == 1 && countPieces(i, j, i, j + 4, 0) == 3) ||
-                (countDiagonal(i, j, 0, player2) == 1 && countDiagonal(i, j, 1, 0) == 3)) {
-                score -= 1;
+    for (i = 1; i < board.length; i++) {
+        for (j = 1; j < board[0].length; j++) {
+            for (let i = lineLength - 1; i > 0; i--) {
+                if ((countPieces(board, i, j, i + 4, j, player) == i && countPieces(board, i, j, i + 4, j, 0) == lineLength - i) || (countPieces(board, i, j, i, j + 4, player) == i && countPieces(board, i, j, i, j + 4, 0) == lineLength - i) ||
+                    (countDiagonal(board, lineLength, i, j, 0, player) == i && countDiagonal(board, lineLength, i, j, 1, 0) == lineLength - i)) {
+                    score += positionScores[lineLength - i];
+                }
+                if ((countPieces(board, i, j, i + 4, j, player2) == i && countPieces(board, i, j, i + 4, j, 0) == lineLength - i) || (countPieces(board, i, j, i, j + 4, player2) == i && countPieces(board, i, j, i, j + 4, 0) == lineLength - i) ||
+                    (countDiagonal(board, lineLength, i, j, 0, player2) == i && countDiagonal(board, lineLength, i, j, 1, 0) == lineLength - i)) {
+                    score -= positionScores[lineLength - i];
+                }
             }
         }
     }
@@ -88,7 +67,7 @@ function score_position(player, player2, nr_moves) {
     return score
 }
 
-function countPieces(i, j, i2, j2, player) {
+function countPieces(board, i, j, i2, j2, player) {
     let pieces = 0;
 
     for (i; i < i2; i++) {
@@ -101,18 +80,18 @@ function countPieces(i, j, i2, j2, player) {
     return pieces;
 }
 
-function countDiagonal(i, j, direction, player) {
+function countDiagonal(board, lineLength, i, j, direction, player) {
     let pieces = 0;
 
-    for (x = 0; x < 4; x++) {
+    for (x = 0; x < lineLength; x++) {
         if (direction == 1) {
-            if (i + x < h && j + x < w) {
+            if (i + x < board.length && j + x < board[0].length) {
                 if (board[i + x][j + x] == player) {
                     pieces += 1;
                 }
             }
         } else {
-            if (i + x < h && j - x < w && j - x > 0) {
+            if (i + x < board.length && j - x < board[0].length && j - x > 0) {
                 if (board[i + x][j - x] == player) {
                     pieces += 1;
                 }
@@ -122,38 +101,57 @@ function countDiagonal(i, j, direction, player) {
     return pieces;
 }
 
-function p(y, x) {
-    return (y < 0 || x < 0 || y >= h || x >= w) ? 0 : board[y][x];
+function checkLine(board, lineLength, r, c, rD, cD) {
+    let toCheck = board[r][c];
+    if (toCheck === 0) return false;
+    let checking = [];
+    for (let i = 1; i < lineLength; i++)
+        checking.push(board[r + (i * rD)][c + (i * cD)]);
+    return checking.every(t => t === toCheck);
 }
 
-function getWinner() { //loops through rows, columns, diagonals, etc for win condition
-    for (y = 0; y < h; y++) {
-        for (x = 0; x < w; x++) {
-            if (p(y, x) != 0 && p(y, x) == p(y, x + 1) && p(y, x) == p(y, x + 2) && p(y, x) == p(y, x + 3)) {
-                return p(y, x);
-            }
-    
-            if (p(y, x) != 0 && p(y, x) == p(y + 1, x) && p(y, x) == p(y + 2, x) && p(y, x) == p(y + 3, x)) {
-                return p(y, x);
-            }
-    
-            for (d = -1; d <= 1; d += 2) {
-                if (p(y, x) != 0 && p(y, x) == p(y + 1 * d, x + 1) && p(y, x) == p(y + 2 * d, x + 2) && p(y, x) == p(y + 3 * d, x + 3)) {
-                    return p(y, x);
-                }
-            }
-        }
-    }
+function getWinner(board, lineLength) {
+    //Check down
+    for (let r = 0; r <= board.length - lineLength; r++)
+        for (let c = 0; c < board[0].length; c++)
+            if (checkLine(board, lineLength, r, c, 1, 0))
+                return board[r][c];
 
-    for (y = 0; y < h; y++)
-        for (x = 0; x < w; x++)
-            if (p(y, x) == 0) return 0;
-    return -1; //tie
+    //Check right
+    for (let r = 0; r < board.length; r++)
+        for (let c = 0; c <= board[0].length - lineLength; c++)
+            if (checkLine(board, lineLength, r, c, 0, 1))
+                    return board[r][c];
+
+    //Check down-right
+    for (let r = 0; r <= board.length - lineLength; r++)
+        for (let c = 0; c <= board[0].length - lineLength; c++)
+        if (checkLine(board, lineLength, r, c, 1, 1))
+                return board[r][c];
+
+    //Check down-left
+    for (let r = board.length - (board.length - lineLength + 1); r < board.length; r++)
+        for (let c = 0; c <= board[0].length - lineLength; c++)
+            if (checkLine(board, lineLength, r, c, -1, 1))
+                    return board[r][c];
+
+    //Check if draw
+    let isDraw = true;
+    for (let row of board)
+        if (row.includes(0)) {
+            isDraw = false;
+            break;
+        }
+    if (isDraw)
+        return -1;
+
+    //Game has not ended
+    return 0;
 }
   
 
-function minimax(depth, isMaximizing, nr_moves) {
-    let result = getWinner();
+function minimax(board, lineLength, depth, isMaximizing, nr_moves) {
+    let result = getWinner(board, lineLength);
     if (result > 0) {
         return scores[result] - 20 * nr_moves;
     }
@@ -163,16 +161,16 @@ function minimax(depth, isMaximizing, nr_moves) {
     }
 
     if (depth == 0) {
-        return score_position(1, 2, nr_moves);
+        return score_position(board, lineLength, 1, 2, nr_moves);
     }
 
     if (isMaximizing) {
         let bestScore = -Infinity;
-        for (let j = 0; j < w; j++) {
+        for (let j = 0; j < board[0].length; j++) {
             let tempI = nextSpace(board, j);
-            if (tempI < h && tempI > -1) {
+            if (tempI < board.length && tempI > -1) {
                 board[tempI][j] = 1;
-                let score = minimax(depth - 1, false, nr_moves + 1);
+                let score = minimax(board, lineLength, depth - 1, false, nr_moves + 1);
                 board[tempI][j] = 0;
                 bestScore = Math.max(score, bestScore);
             }
@@ -180,12 +178,12 @@ function minimax(depth, isMaximizing, nr_moves) {
         return bestScore;
     } else {
         let bestScore = Infinity;
-        for (let j = 0; j < w; j++) {
+        for (let j = 0; j < board[0].length; j++) {
             // Is the spot available?
             let tempI = nextSpace(board, j)
-            if (tempI < h && tempI > -1) {
+            if (tempI < board.length && tempI > -1) {
                 board[tempI][j] = 2;
-                let score = minimax(depth - 1, true, nr_moves + 1);
+                let score = minimax(board, lineLength, depth - 1, true, nr_moves + 1);
                 board[tempI][j] = 0;
                 bestScore = Math.min(score, bestScore);
             }

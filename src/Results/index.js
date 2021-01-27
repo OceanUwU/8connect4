@@ -1,7 +1,8 @@
 import React from 'react';
-import { Typography, Tooltip, IconButton, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@material-ui/core';
+import { Typography, Tooltip, IconButton, Paper, TableContainer, Table, TableHead, TableBody, TableRow, TableCell, Button, Divider } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import HomeIcon from '@material-ui/icons/Home';
+import socket from '../socket/';
 //import { gameNameChars } from '../Match/gameplay';
 
 const useStyles = makeStyles({
@@ -83,6 +84,10 @@ function Results(props) {
                         </TableBody>
                     </Table>
                 </TableContainer>
+
+                <Button color="primary" size="large" style={{margin: '16px 0'}} onClick={() => socket.emit('rejoin', props.rjCode, props.matchInfo.options)}>Play again</Button>
+
+                <Divider/>
 
                 <Typography variant="h3">
                     Games

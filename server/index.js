@@ -32,14 +32,44 @@ function joinMatch(match, socket) {
 }
 
 function createMatch(socket, options) {
-    if (socket.ingame)
+    if (socket != null && socket.ingame)
         return;
     let match = new Match(options);
     let code = generateMatchCode();
     matches[code] = match;
     match.code = code;
-    joinMatch(match, socket);
+    if (socket != null)
+        joinMatch(match, socket);
+    setTimeout(() => {
+        if (matches[code] && Object.keys(matches[code].players).length == 0)
+            delete matches[code];
+    }, 10000);
+    return match;
 }
+
+let optionsValid = options => (
+    typeof options == 'object'
+    && typeof options.public == 'boolean'
+    && Number.isInteger(options.players)
+    && options.players >= playersAllowed[0]
+    && options.players <= playersAllowed[1]
+    && Number.isInteger(options.gameMax)
+    && options.gameMax >= maxGamesAllowed[0]
+    && options.gameMax <= maxGamesAllowed[1]
+    && Number.isInteger(options.lineLength)
+    && options.lineLength >= 3
+    && options.lineLength <= 6
+    && Number.isInteger(options.columns)
+    && options.columns >= 3
+    && options.columns <= 10
+    && Number.isInteger(options.rows)
+    && options.rows >= 3
+    && options.rows <= 10
+    && typeof options.turnTime == 'number'
+    && options.turnTime >= turnTimesAllowed[0]
+    && options.turnTime <= turnTimesAllowed[1]
+    && typeof options.runDownTimer == 'boolean'
+);
 
 io.on('connection', socket => {
     generateUsername(socket)
@@ -52,12 +82,16 @@ io.on('connection', socket => {
                 if (!allowedUsernameChars.includes(i))
                     usernameAllowed = false;
                 
-            if (usernameAllowed && newName.length > 0 && newName.length <= maxUsernameLength)
+            if (usernameAllowed && newName.length > 0 && newName.length <= maxUsernameLength) {
                 socket.username = newName;
-            else
+            } else
                 generateUsername(socket);
+            
+            if (socket.ingame && matches[socket.ingame].turnNum == 0) {
+                matches[socket.ingame].players[socket.id].name = socket.username;
+                matches[socket.ingame].matchUpdate();
+            }
         }
-        
     });
 
     socket.on('joinMatch', code => {
@@ -79,32 +113,45 @@ io.on('connection', socket => {
         if (matchesAvailable.length > 0) //if there are available matches
             joinMatch(matchesAvailable[Math.floor(Math.random()*matchesAvailable.length)], socket);
         else
-            socket.emit('err', 'Maybe create one yourself for people to join?', 'No public matches available.')
+            socket.emit('noMatches');
+    });
+
+    socket.on('rejoin', (rejoinCode, options) => {
+        if (typeof rejoinCode == 'string') {
+            let match = Object.values(matches).find(m => m.rejoinCode == rejoinCode);
+            if (match != undefined) {
+                socket.emit('rejoin', match.code);
+            } else {
+                if (optionsValid(options)) {
+                    match = createMatch(null, options);
+                    match.rejoinCode = rejoinCode;
+                    socket.emit('rejoin', match.code);
+                }
+            }
+        }
     });
 
     socket.on('createMatch', options => {
-        if (
-            typeof options == 'object'
-            && typeof options.public == 'boolean'
-            && Number.isInteger(options.players)
-            && options.players >= playersAllowed[0]
-            && options.players <= playersAllowed[1]
-            && Number.isInteger(options.gameMax)
-            && options.gameMax >= maxGamesAllowed[0]
-            && options.gameMax <= maxGamesAllowed[1]
-            && typeof options.turnTime == 'number'
-            && options.turnTime >= turnTimesAllowed[0]
-            && options.turnTime <= turnTimesAllowed[1]
-            && typeof options.runDownTimer == 'boolean'
-        )
+        if (optionsValid(options))
             createMatch(socket, {
                 public: options.public,
                 players: options.players,
                 gameMax: options.gameMax,
+                lineLength: options.lineLength,
+                rows: options.rows,
+                columns: options.columns,
                 turnTime: options.turnTime,
                 runDownTimer: options.runDownTimer,
             });
     });
+
+    socket.on('updateOptions', newOptions => {
+        if (socket.ingame && matches[socket.ingame].host == socket.id && !matches[socket.ingame].started && optionsValid(newOptions))
+            matches[socket.ingame].setOptions({
+                ...newOptions,
+                players: matches[socket.ingame].maxPlayers,
+            });
+        });
 
     socket.on('bot', difficulty => {
         if (socket.ingame)

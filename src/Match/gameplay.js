@@ -11,8 +11,6 @@ import * as controller from './controller';
 
 const boxSize = 50;
 const gridlineSize = 4;
-const boardWidth = 7;
-const boardHeight = 6;
 const gameNameChars = '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const placeAudio = new Audio('/place.mp3');
 const otherPlaceAudio = new Audio('/otherPlace.mp3');
@@ -30,12 +28,7 @@ var turn = 'a';
 var turnTimerEnd = Date.now();
 
 var canvas = document.createElement('canvas');
-canvas.width = (boxSize * boardWidth) + ((boardWidth + 1) * gridlineSize);
-canvas.height = (boxSize + gridlineSize) * (boardHeight + 1);
 var ctx = canvas.getContext('2d');
-ctx.font = `30px Roboto`;
-ctx.textAlign = "center";
-ctx.textBaseline = "middle";
 
 function showTimer() {
     let timeLeft = (turnTimerEnd - Date.now()) / 1000;
@@ -47,13 +40,18 @@ function showTimer() {
 function playMatch(startingMatchInfo, sentId) {
     myId = sentId;
     matchInfo = startingMatchInfo;
+    canvas.width = (boxSize * matchInfo.columns) + ((matchInfo.columns + 1) * gridlineSize);
+    canvas.height = (boxSize + gridlineSize) * (matchInfo.rows + 1);
+    ctx.font = `30px Roboto`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     turnNumber = 0;
     for (let i in startingMatchInfo.games) {
         let game = startingMatchInfo.games[i];
         let state = [];
-        for (let y = 0; y < boardHeight; y++) {
+        for (let y = 0; y < matchInfo.rows; y++) {
             let column = [];
-            for (let x = 0; x < boardWidth; x++) {
+            for (let x = 0; x < matchInfo.columns; x++) {
                 column.push(null);
             }
             state.push(column);
@@ -69,6 +67,7 @@ function playMatch(startingMatchInfo, sentId) {
     }
     gamesLeft = games.length;
     ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
+        controller.setupController(startingMatchInfo);
         document.getElementById('controller').appendChild(controller.canvas);
         controller.canvas.style.touchAction = 'none';
         document.getElementById('maxGames').innerHTML = gamesLeft;
@@ -132,9 +131,16 @@ function drawCounter(image, column, row) {
         ctx.drawImage(image, ((boxSize+gridlineSize)*Number(column))+gridlineSize, (boxSize+gridlineSize)*(Number(row)+1), boxSize, boxSize);
 }
 
-function checkLine(a,b,c,d) {
-    // Check first cell non-zero and all cells match
-    return ((a !== null) && (a === b) && (a === c) && (a === d));
+function checkLine(state, r, c, rD, cD) {
+    let toCheck = state[r][c];
+    if (toCheck === null) return null;
+    let checking = [];
+    for (let i = 1; i < matchInfo.lineLength; i++)
+        checking.push([r + (i * rD), c + (i * cD)]);
+    if (checking.every(t => state[t[0]][t[1]] === toCheck))
+        return [[r, c], ...checking];
+    else
+        return null;
 }
 
 function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false) {
@@ -142,9 +148,9 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
 
     //draw gridlines
     ctx.fillStyle = 'white';
-    for (let i = 0; i <= boardHeight; i++)
+    for (let i = 0; i <= matchInfo.rows; i++)
         ctx.fillRect(0, boxSize+((boxSize+gridlineSize)*i), canvas.width, gridlineSize);
-    for (let i = 0; i <= boardWidth; i++)
+    for (let i = 0; i <= matchInfo.columns; i++)
         ctx.fillRect((boxSize+gridlineSize)*i, boxSize, gridlineSize, canvas.height-boxSize);
 
     for (let i in game.state)
@@ -165,7 +171,7 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
 
         //draw counter inside board
         let row = null;       
-        for (let i = 0; i < boardHeight; i++) {
+        for (let i = 0; i < matchInfo.rows; i++) {
             if (game.state[i][game.hover] != null) {
                 row = i - 1;
                 break;
@@ -174,7 +180,7 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
         if (row == -1) //if the top slot was full
             row = false; //skip this turn
         if (row == null) //if all the slots were empty
-            row = boardHeight - 1; //use the bottom slot
+            row = matchInfo.rows - 1; //use the bottom slot
         if (row !== false) {
             if (images.hover[turn].complete) {
                 ctx.globalAlpha = 0.15;
@@ -188,63 +194,96 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
 
     }
 
-    if (overlayImage != null && overlayImage.complete) {
-        if (!isDraw) {
-            let winner;
-            let winLocation = [];
+    if (!isDraw) {
+        let winner;
+        let winLocation = [];
 
-            //Check down
-            for (let r = 0; r < 3; r++)
-                for (let c = 0; c < 7; c++)
-                    if (checkLine(game.state[r][c], game.state[r+1][c], game.state[r+2][c], game.state[r+3][c])) {
-                        winner = game.state[r][c];
-                        winLocation.push([r,c],[r+1,c],[r+2,c],[r+3,c]);
-                    }
-        
-            //Check right
-            for (let r = 0; r < 6; r++)
-                for (let c = 0; c < 4; c++)
-                    if (checkLine(game.state[r][c], game.state[r][c+1], game.state[r][c+2], game.state[r][c+3])) {
-                        winner = game.state[r][c];
-                        winLocation.push([r,c],[r,c+1],[r,c+2],[r,c+3]);
-                    }
-        
-            //Check down-right
-            for (let r = 0; r < 3; r++)
-                for (let c = 0; c < 4; c++)
-                    if (checkLine(game.state[r][c], game.state[r+1][c+1], game.state[r+2][c+2], game.state[r+3][c+3])) {
-                        winner = game.state[r][c];
-                        winLocation.push([r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]);
-                    }
-        
-            //Check down-left
-            for (let r = 3; r < 6; r++)
-                for (let c = 0; c < 4; c++)
-                    if (checkLine(game.state[r][c], game.state[r-1][c+1], game.state[r-2][c+2], game.state[r-3][c+3])) {
-                        winner = game.state[r][c];
-                        winLocation.push([r,c],[r-1,c+1],[r-2,c+2],[r-3,c+3]);
-                    }
-            
-            ctx.fillStyle = {a: '#f58600af', b: '#03ffffaf'}[winner];
-            let squaresDone = [];
-            for (let i of winLocation)
-                if (!squaresDone.some(square => JSON.stringify(square) == JSON.stringify(i))) {
-                    squaresDone.push(i);
-                    ctx.fillRect(
-                        ((boxSize+gridlineSize)*i[1])+gridlineSize,
-                        (boxSize+gridlineSize)*(i[0]+1),
-                        boxSize, boxSize
-                    );
+        //Check down
+        for (let r = 0; r <= matchInfo.rows - matchInfo.lineLength; r++)
+            for (let c = 0; c < matchInfo.columns; c++) {
+                let tiles = checkLine(game.state, r, c, 1, 0);
+                if (tiles != null) {
+                    winner = game.state[r][c];
+                    winLocation = winLocation.concat(tiles);
                 }
-            /*ctx.lineWidth = 5;
-            ctx.beginPath();
-            ctx.moveTo(((boxSize+gridlineSize)*Number(winLocation[1]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[0])+1));
-            ctx.lineTo(((boxSize+gridlineSize)*Number(winLocation[3]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[2])+1));
-            ctx.stroke();*/
-        }
+            }
+    
+        //Check right
+        for (let r = 0; r < matchInfo.rows; r++)
+            for (let c = 0; c <= matchInfo.columns - matchInfo.lineLength; c++) {
+                let tiles = checkLine(game.state, r, c, 0, 1);
+                if (tiles != null) {
+                    winner = game.state[r][c];
+                    winLocation = winLocation.concat(tiles);
+                }
+            }
+    
+        //Check down-right
+        for (let r = 0; r <= matchInfo.rows - matchInfo.lineLength; r++)
+            for (let c = 0; c <= matchInfo.columns - matchInfo.lineLength; c++) {
+                let tiles = checkLine(game.state, r, c, 1, 1);
+                if (tiles != null) {
+                    winner = game.state[r][c];
+                    winLocation = winLocation.concat(tiles);
+                }
+            }
+    
+        //Check down-left
+        for (let r = matchInfo.rows - (matchInfo.rows - matchInfo.lineLength + 1); r < matchInfo.rows; r++)
+            for (let c = 0; c <= matchInfo.columns - matchInfo.lineLength; c++) {
+                let tiles = checkLine(game.state, r, c, -1, 1);
+                if (tiles != null) {
+                    winner = game.state[r][c];
+                    winLocation = winLocation.concat(tiles);
+                }
+            }
+        
+        ctx.fillStyle = {a: '#f58600af', b: '#03ffffaf'}[winner];
+        let squaresDone = [];
+        for (let i of winLocation)
+            if (!squaresDone.some(square => JSON.stringify(square) == JSON.stringify(i))) {
+                squaresDone.push(i);
+                ctx.fillRect(
+                    ((boxSize+gridlineSize)*i[1])+gridlineSize,
+                    (boxSize+gridlineSize)*(i[0]+1),
+                    boxSize, boxSize
+                );
+            }
+        /*ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(((boxSize+gridlineSize)*Number(winLocation[1]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[0])+1));
+        ctx.lineTo(((boxSize+gridlineSize)*Number(winLocation[3]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[2])+1));
+        ctx.stroke();*/
+    }
+
+    if (overlayImage != null && overlayImage.complete) {
         ctx.globalAlpha = 0.75;
-        ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
-        ctx.globalAlpha = 1; //reset alpha
+        //draw grey "window"
+        ctx.fillStyle = '#6060607B';
+        ctx.fillRect(gridlineSize, boxSize+gridlineSize, ((boxSize+gridlineSize)*matchInfo.columns)-gridlineSize, ((boxSize+gridlineSize)*matchInfo.rows)-gridlineSize);
+        //draw black border
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, boxSize, canvas.width, gridlineSize); //top border
+        ctx.fillRect(0, canvas.height-gridlineSize, canvas.width, gridlineSize); //bottom border
+        ctx.fillRect(0, boxSize+gridlineSize, gridlineSize, canvas.height - boxSize - gridlineSize * 2); //left border
+        ctx.fillRect(canvas.width-gridlineSize, boxSize+gridlineSize, gridlineSize, canvas.height - boxSize - gridlineSize * 2); //right border
+        //draw icon
+        let wrh = overlayImage.width / overlayImage.height;
+        let newWidth = canvas.width - (gridlineSize * 2);
+        let newHeight = newWidth / wrh;
+        if (newHeight > canvas.height) {
+            newHeight = canvas.height - (boxSize + (gridlineSize * 2));
+            newWidth = newHeight * wrh;
+        }
+        let xOffset = newWidth < canvas.width ? ((canvas.width - newWidth) / 2) : 0;
+        let yOffset = newHeight < canvas.height ? ((canvas.height + boxSize - newHeight) / 2) : 0;
+
+        ctx.drawImage(overlayImage, xOffset, yOffset, newWidth, newHeight);
+        //
+        //ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
+        //reset
+        ctx.globalAlpha = 1;
+        ctx.setTransform(1,0,0,1,0,0);
     }
     
     return canvas.toDataURL();
@@ -280,21 +319,21 @@ function outcomeDecided(boardId, outcome) {
     gameEndAudio.play();
 }
 
-function endMatch(results) {
+function endMatch(results, rjCode) {
     for (let i in intervals) {
         clearInterval(intervals[i]);
         delete intervals[i];
     }
 
     for (let game of games) {
-        game.src = drawBoard(game, images.outcomeOverlay.end, game.outcome == false, true);
+        game.src = drawBoard(game, null, game.outcome == false, true);
         for (let i in game.players) {
             game.players[i] = matchInfo.players.find(player => player.id == game.players[i]);
         }
     }
     games.sort((a, b) => gameNameChars.indexOf(a.name) - gameNameChars.indexOf(b.name));
 
-    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Results myId={myId} results={results} games={games} /></ThemeProvider>, document.getElementById('root'));
+    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Results myId={myId} results={results} matchInfo={matchInfo} games={games} rjCode={rjCode} /></ThemeProvider>, document.getElementById('root'));
 
     matchInfo = null;
     games = [];
