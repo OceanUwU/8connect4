@@ -207,6 +207,7 @@ function Match(props) {
             </div>
 
             <div>
+                <Typography variant="h2" style={{textAlign: 'center'}}>{props.games.filter(game => props.players[0].id.startsWith(game.players.a)).length+props.games.filter(game => props.players[0].id.startsWith(game.players.b)).length}connect{props.matchInfo.options.lineLength}</Typography>
                 <PlayerGames player={selfPlayer} players={props.players} games={props.games} self={true} myId={props.myId} />
                 {props.players.filter(player => !props.myId.startsWith(player.id)).map(player => (
                     <PlayerGames player={player} players={props.players} games={props.games} self={false} myId={props.myId} />

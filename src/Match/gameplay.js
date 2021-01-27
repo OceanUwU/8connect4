@@ -66,7 +66,7 @@ function playMatch(startingMatchInfo, sentId) {
         });
     }
     gamesLeft = games.length;
-    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
+    ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match matchInfo={matchInfo} players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
         controller.setupController(startingMatchInfo);
         document.getElementById('controller').appendChild(controller.canvas);
         controller.canvas.style.touchAction = 'none';
