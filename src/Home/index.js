@@ -25,7 +25,7 @@ const useStyles = makeStyles({
 function Home() {
     const classes = useStyles();
     let showTutorial = async () => {
-        let videoId = 'x8DtojIWZC4';
+        let videoId = 'TEoMw_icLKQ';
         let dialog = await showDialog({
             layer: 'tutorial',
             title: 'New to 8connect4?',
