@@ -151,7 +151,26 @@ io.on('connection', socket => {
                 ...newOptions,
                 players: matches[socket.ingame].maxPlayers,
             });
-        });
+    });
+
+    socket.on('newRoomCode', () => {
+        if (socket.ingame && matches[socket.ingame].host == socket.id && !matches[socket.ingame].started) {
+            let match = matches[socket.ingame];
+            let oldCode = match.code;
+            let newCode = generateMatchCode();
+            console.log(newCode);
+            delete matches[oldCode];
+            matches[newCode] = match;
+            match.code = newCode;
+            Object.keys(match.players).forEach(id => {
+                let p = io.sockets.sockets.get(id);
+                p.ingame = newCode;
+                p.leave(oldCode);
+                p.join(newCode);
+            });
+            match.matchUpdate();
+        }
+    });
 
     socket.on('bot', difficulty => {
         if (socket.ingame)

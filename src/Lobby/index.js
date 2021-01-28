@@ -93,6 +93,8 @@ function Lobby(props) {
     let copyHelp = 'Copy a link others can use to join this lobby to your clipboard.';
     let [copyTitle, setCopyTitle] = React.useState(copyHelp);
 
+    console.log(props.matchInfo);
+
     return (
         <div>
             <IconButton onClick={() => window.location.reload()}>

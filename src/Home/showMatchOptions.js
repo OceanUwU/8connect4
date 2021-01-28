@@ -146,6 +146,8 @@ function MatchOptions(props) {
                         <Grid item><PublicIcon /></Grid>
                     </Grid>
                 </Typography>
+
+                {props.started ? <Button color={props.editable ? 'primary' : 'disabled'} size="small" onClick={() => socket.emit('newRoomCode')} disabled={!props.editable}>New room code</Button> : null}
             </FormControl>
 
             {props.started ? null : <span>
