@@ -105,10 +105,11 @@ class Match {
             
             if (Object.keys(this.players).length == 0 || !(Object.values(this.players).some(p => !p.bot))) //if there are no players left (not including bots)
                 delete matches[this.code];
-            else if (!this.players.hasOwnProperty(this.host))
-                this.host = Object.keys(this.players)[0];
-            else
+            else {
+                if (!this.players.hasOwnProperty(this.host))
+                    this.host = Object.keys(this.players)[0];
                 this.matchUpdate();
+            }
         } else {
             this.players[player].bot = true;
             if (!(Object.values(this.players).some(p => !p.bot))) { //if there are no non-bot players left
