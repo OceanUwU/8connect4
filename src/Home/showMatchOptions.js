@@ -115,6 +115,12 @@ function MatchOptions(props) {
         setRunDownTimer(!runDownTimer);
         sendUpdate();
     };
+    const [nameConvention, setNameConvention] = React.useState(options.names);
+    const handleNameConventionChange = event => {
+        options.names = event.target.value;
+        setNameConvention(event.target.value);
+        sendUpdate();
+    };
     
     let updateOptions = () => {
         setPublicity(options.public);
@@ -236,13 +242,33 @@ function MatchOptions(props) {
                 />
             </FormControl>
             
-            <Divider style={{marginBottom: 8}} />
+            <Divider />
 
             <FormControlLabel
                 control={<Checkbox color="primary" checked={runDownTimer} onChange={handleRunDownTimerChange} disabled={!props.editable} />}
                 label="Always run down turn timer?"
                 labelPlacement="start"
             />
+
+            <Divider />
+
+            <FormControl className={classes.formControl}>
+            <FormLabel>Naming convention</FormLabel>
+                <Select
+                    value={nameConvention}
+                    onChange={handleNameConventionChange}
+                    disabled={!props.editable}
+                >
+                    <MenuItem value={0}>Normal</MenuItem>
+                    <MenuItem value={1}>Gifted</MenuItem>
+                    <MenuItem value={2}>Random</MenuItem>
+                </Select>
+                <FormHelperText>{(() => ({
+                    0: 'Players use their chosen name',
+                    1: 'Players\' chosen names are shuffled between them',
+                    2: 'Generates a silly name for each player',
+                }[nameConvention]))()}</FormHelperText>
+            </FormControl>
         </div>
     );
 }

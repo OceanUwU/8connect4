@@ -1,4 +1,5 @@
 const cfg = require('./cfg');
+const availableCounters = require('../src/Lobby/availableCounters.json');
 const maxUsernameLength = 12;
 const allowedUsernameChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 áéíóúÁÉÍÓÚ!"£$€%^&*()-=_+[]{};\'#:@~,./<>?\\|`¬¦';
 const playersAllowed = [1, 25];
@@ -15,6 +16,26 @@ const io = require("socket.io")(cfg.port, {
     },
     pingTimeout: 60000,
 });
+
+const defaultCosmetics = {};
+for (let i of ['a', 'b']) {
+    defaultCosmetics[i] = {
+        s: 0, //shape
+        c: 0, //colour
+        f: 0, //filled
+    }
+}
+
+let cosmeticsValid = cosmetics => {
+    if (typeof cosmetics != 'object') return false;
+    for (let i of ['a', 'b']) {
+        if (!cosmetics.hasOwnProperty(i) || typeof cosmetics[i] != 'object') return false;
+        for (let j of availableCounters) {
+            if (!cosmetics[i].hasOwnProperty(j.key) || !j.available.includes(cosmetics[i][j.key])) return false;
+        }
+    }
+    return true;
+}
 
 function generateUsername(socket) {
     socket.username = `player${String(Math.random()).slice(2, 2+3)}`;
@@ -69,10 +90,14 @@ let optionsValid = options => (
     && options.turnTime >= turnTimesAllowed[0]
     && options.turnTime <= turnTimesAllowed[1]
     && typeof options.runDownTimer == 'boolean'
+    && Number.isInteger(options.names)
+    && options.names >= 0
+    && options.names <= 2
 );
 
 io.on('connection', socket => {
-    generateUsername(socket)
+    generateUsername(socket);
+    socket.cosmetics = defaultCosmetics;
     socket.ingame = false;
 
     socket.on('changeName', newName => {
@@ -89,6 +114,16 @@ io.on('connection', socket => {
             
             if (socket.ingame && matches[socket.ingame].turnNum == 0) {
                 matches[socket.ingame].players[socket.id].name = socket.username;
+                matches[socket.ingame].matchUpdate();
+            }
+        }
+    });
+
+    socket.on('cosmetics', cosmetics => {
+        if (cosmeticsValid(cosmetics)) {
+            socket.cosmetics = cosmetics;
+            if (socket.ingame && matches[socket.ingame].turnNum == 0) {
+                matches[socket.ingame].players[socket.id].cosmetics = socket.cosmetics;
                 matches[socket.ingame].matchUpdate();
             }
         }
@@ -142,6 +177,7 @@ io.on('connection', socket => {
                 columns: options.columns,
                 turnTime: options.turnTime,
                 runDownTimer: options.runDownTimer,
+                names: options.names,
             });
     });
 
@@ -158,7 +194,6 @@ io.on('connection', socket => {
             let match = matches[socket.ingame];
             let oldCode = match.code;
             let newCode = generateMatchCode();
-            console.log(newCode);
             delete matches[oldCode];
             matches[newCode] = match;
             match.code = newCode;

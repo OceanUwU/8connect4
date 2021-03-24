@@ -60,14 +60,15 @@ function playMatch(startingMatchInfo, sentId) {
         games.push({
             id: i,
             name: (i+1 > gameNameChars.length ? `${gameNameChars[~~(i/gameNameChars.length)]}${gameNameChars[i%gameNameChars.length]}` : gameNameChars[i]),
-            players: game.players,
+            playerIDs: game.players,
+            players: Object.fromEntries(Object.keys(game.players).map(i => [i, matchInfo.players.find(player => player.id == game.players[i])])),
             state: state,
             order: JSON.parse(JSON.stringify(state)),
         });
     }
     gamesLeft = games.length;
     ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Match matchInfo={matchInfo} players={startingMatchInfo.players} games={games} myId={myId} /></ThemeProvider>, document.getElementById('root'), () => {
-        controller.setupController(startingMatchInfo);
+        controller.setupController(startingMatchInfo, Object.fromEntries(['a', 'b'].map(c => [c, getImage(games.find(g => myId.startsWith(g.playerIDs[c])), c)])));
         document.getElementById('controller').appendChild(controller.canvas);
         controller.canvas.style.touchAction = 'none';
         document.getElementById('maxGames').innerHTML = gamesLeft;
@@ -114,7 +115,7 @@ function move(gameId, colour, column, row) {
     game.order[column][row] = turnNumber;
     game.hover = null;
     drawBoardsOfId(gameId);
-    if (!myId.startsWith(game.players[colour]))
+    if (!myId.startsWith(game.players[colour].id))
         otherPlaceAudio.play();
 }
 
@@ -143,6 +144,12 @@ function checkLine(state, r, c, rD, cD) {
         return null;
 }
 
+function getImage(game, colour) {
+    let c = game.players[colour].cosmetics[colour];
+    return images.counters[colour][c.c][c.s][c.f];
+}
+
+const highlightColours = {a: ['f58600', 'ff0010', 'ffd700', 'ff1a96'], b: ['03ffff', '2415ff', '00ff00', '0fff7d']};
 function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); //clear canvas
 
@@ -157,7 +164,7 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
         for (let j in game.state[i]) {
             let piece = game.state[i][j];
             if (piece != null) {
-                drawCounter(images[piece], j, i);
+                drawCounter(getImage(game, piece), j, i);
                 if (showOrder) {
                     ctx.fillStyle = 'white';
                     ctx.fillText(String(game.order[i][j]), ((boxSize+gridlineSize)*Number(j))+gridlineSize+(boxSize/2), (boxSize+gridlineSize)*(Number(i)+1)+(boxSize/2)+3);
@@ -167,7 +174,7 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
     
     if (game.hover !== null) {
 
-        drawCounter(images[turn], game.hover, -1); //draw counter above board
+        drawCounter(getImage(game, turn), game.hover, -1); //draw counter above board
 
         //draw counter inside board
         let row = null;       
@@ -182,12 +189,12 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
         if (row == null) //if all the slots were empty
             row = matchInfo.rows - 1; //use the bottom slot
         if (row !== false) {
-            if (images.hover[turn].complete) {
+            if (images.hover[turn][game.players[turn].cosmetics[turn].c].complete) {
                 ctx.globalAlpha = 0.15;
-                ctx.drawImage(images.hover[turn], ((boxSize+gridlineSize)*Number(game.hover))+gridlineSize, boxSize+gridlineSize, boxSize, (boxSize+gridlineSize)*(Number(row)+1)-gridlineSize);
+                ctx.drawImage(images.hover[turn][game.players[turn].cosmetics[turn].c], ((boxSize+gridlineSize)*Number(game.hover))+gridlineSize, boxSize+gridlineSize, boxSize, (boxSize+gridlineSize)*(Number(row)+1)-gridlineSize);
             }
             ctx.globalAlpha = 0.5;
-            drawCounter(images[turn], game.hover, row);
+            drawCounter(getImage(game, turn), game.hover, row);
             ctx.globalAlpha = 1; //reset alpha
         }
         
@@ -237,18 +244,18 @@ function drawBoard(game, overlayImage = null, isDraw = false, showOrder = false)
                     winLocation = winLocation.concat(tiles);
                 }
             }
-        
-        ctx.fillStyle = {a: '#f58600af', b: '#03ffffaf'}[winner];
         let squaresDone = [];
-        for (let i of winLocation)
+        for (let i of winLocation) {
             if (!squaresDone.some(square => JSON.stringify(square) == JSON.stringify(i))) {
                 squaresDone.push(i);
+                ctx.fillStyle = '#' + highlightColours[winner][game.players[winner].cosmetics[winner].c] + 'af';
                 ctx.fillRect(
                     ((boxSize+gridlineSize)*i[1])+gridlineSize,
                     (boxSize+gridlineSize)*(i[0]+1),
                     boxSize, boxSize
                 );
             }
+        }
         /*ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(((boxSize+gridlineSize)*Number(winLocation[1]))+gridlineSize, (boxSize+gridlineSize)*(Number(winLocation[0])+1));
@@ -327,9 +334,6 @@ function endMatch(results, rjCode) {
 
     for (let game of games) {
         game.src = drawBoard(game, null, game.outcome == false, true);
-        for (let i in game.players) {
-            game.players[i] = matchInfo.players.find(player => player.id == game.players[i]);
-        }
     }
     games.sort((a, b) => gameNameChars.indexOf(a.name) - gameNameChars.indexOf(b.name));
 

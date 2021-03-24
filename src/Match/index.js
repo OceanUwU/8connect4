@@ -2,6 +2,7 @@ import React from 'react';
 import { Typography, Divider } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import './index.css';
+import getCounter from '../Lobby/getCounter.js';
 
 const useStyles = makeStyles({
     gameInfo: {
@@ -101,8 +102,8 @@ const useStyles = makeStyles({
 
 function GameImage(props) {
     const classes = useStyles();
-    let colour = Object.keys(props.game.players).find(c => props.playerId.startsWith(props.game.players[c]));
-    let opponent = props.players.find(player => player.id.startsWith(props.game.players[colour == 'a' ? 'b' : 'a']));// props.players.find(player => player.id.startsWith(Object.values(props.game.players).find(player => !props.playerId.startsWith(player))));
+    let colour = Object.keys(props.game.playerIDs).find(c => props.playerId.startsWith(props.game.playerIDs[c]));
+    let opponent = props.players.find(player => player.id.startsWith(props.game.playerIDs[colour == 'a' ? 'b' : 'a']));// props.players.find(player => player.id.startsWith(Object.values(props.game.playerIDs).find(player => !props.playerId.startsWith(player))));
 
     return (
         <div>
@@ -141,14 +142,14 @@ function PlayerGames(props) {
             }
             <div className={props.self ? classes.playingGamesContainer : classes.otherGamesContainer}>
                 <div className={gameRowClass}>
-                    {props.self ? <img className={`${classes.colourIndicator} colour-indicator-a`} src="/a.png" /> : null}
-                    {props.games.filter(game => props.player.id.startsWith(game.players.a)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'a'} playerId={props.player.id} myId={props.myId} />)}
-                    {props.self ? null : <img className={`${classes.colourIndicator} colour-indicator-a`} src="/a.png" />}
+                    {props.self ? <img className={`${classes.colourIndicator} colour-indicator-a`} src={`/counters/${getCounter('a', props.player.cosmetics)}.png`} /> : null}
+                    {props.games.filter(game => props.player.id.startsWith(game.playerIDs.a)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'a'} playerId={props.player.id} myId={props.myId} />)}
+                    {props.self ? null : <img className={`${classes.colourIndicator} colour-indicator-a`} src={`/counters/${getCounter('a', props.player.cosmetics)}.png`} />}
                 </div>
                 {props.self ? <div id="controller" className={classes.controls} /> : null}
                 <div className={gameRowClass}>
-                    <img className={`${classes.colourIndicator} colour-indicator-b`} src="/b.png" />
-                    {props.games.filter(game => props.player.id.startsWith(game.players.b)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'b'} playerId={props.player.id} myId={props.myId} />)}
+                    <img className={`${classes.colourIndicator} colour-indicator-b`} src={`/counters/${getCounter('b', props.player.cosmetics)}.png`} />
+                    {props.games.filter(game => props.player.id.startsWith(game.playerIDs.b)).map(game => <GameImage self={props.self} game={game} games={props.games} players={props.players} playerColour={'b'} playerId={props.player.id} myId={props.myId} />)}
                 </div>
             </div>
         </div>
@@ -207,7 +208,7 @@ function Match(props) {
             </div>
 
             <div>
-                <Typography variant="h2" style={{textAlign: 'center'}}>{props.games.filter(game => props.players[0].id.startsWith(game.players.a)).length+props.games.filter(game => props.players[0].id.startsWith(game.players.b)).length}connect{props.matchInfo.options.lineLength}</Typography>
+                <Typography variant="h2" style={{textAlign: 'center'}}>{props.games.filter(game => props.players[0].id.startsWith(game.playerIDs.a)).length+props.games.filter(game => props.players[0].id.startsWith(game.playerIDs.b)).length}connect{props.matchInfo.options.lineLength}</Typography>
                 <PlayerGames player={selfPlayer} players={props.players} games={props.games} self={true} myId={props.myId} />
                 {props.players.filter(player => !props.myId.startsWith(player.id)).map(player => (
                     <PlayerGames player={player} players={props.players} games={props.games} self={false} myId={props.myId} />

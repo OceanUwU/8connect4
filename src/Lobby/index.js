@@ -12,8 +12,10 @@ import EditIcon from '@material-ui/icons/Edit';
 import socket from '../socket';
 import copy from 'clipboard-copy';
 import NameInput from '../Home/NameInput';
+import Cosmetics from './Cosmetics';
 import showDialog from '../Dialog/show';
 import showMatchOptions from '../Home/showMatchOptions';
+import getCounter from './getCounter';
 
 const useStyles = makeStyles({
     root: {
@@ -41,6 +43,11 @@ const useStyles = makeStyles({
         color: 'red',
         fontWeight: 'bold',
     },
+
+    counterStyle: {
+        width: 20,
+        marginBottom: -5,
+    }
 });
 
 function Lobby(props) {
@@ -64,8 +71,12 @@ function Lobby(props) {
                         </Tooltip>
                     : null}
                     {you ? <span className={classes.you}>{content}</span> : content}
+                    {i in props.matchInfo.players ? ['a', 'b'].map(c => <img className={classes.counterStyle} src={`/counters/${getCounter(c, props.matchInfo.players[i].cosmetics)}.png`} />) : null}
                     {you ? <Tooltip title="Change your name">
-                        <IconButton size="small" onClick={() => showDialog({title: 'Change your name?'}, <NameInput />)}><EditIcon fontSize="inherit" /></IconButton>
+                        <IconButton size="small" onClick={() => showDialog({title: 'Customise'}, <div>
+                            <NameInput />
+                            <Cosmetics />
+                        </div>)}><EditIcon fontSize="inherit" /></IconButton>
                     </Tooltip> : null}
                     {i in props.matchInfo.players && amHost && !props.matchInfo.starting && !you ? <span>
                         <Tooltip title="Kick - remove this player from this lobby.">
@@ -92,8 +103,6 @@ function Lobby(props) {
 
     let copyHelp = 'Copy a link others can use to join this lobby to your clipboard.';
     let [copyTitle, setCopyTitle] = React.useState(copyHelp);
-
-    console.log(props.matchInfo);
 
     return (
         <div>

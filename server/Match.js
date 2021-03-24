@@ -1,5 +1,7 @@
 const Game = require('./Game');
+const availableCounters = require('../src/Lobby/availableCounters.json');
 const { matches, io } = require('./');
+const nameWords = require('./nameWords.js');
 
 const opposite = {'a': 'b', 'b': 'a'};
 const difficulties = ['E', 'M', 'H'];
@@ -17,6 +19,7 @@ function shuffleArray(array) {
         array[i] = array[j];
         array[j] = temp;
     }
+    return array;
 }
 
 class Match {
@@ -31,6 +34,7 @@ class Match {
         this.columns = options.columns;
         this.turnTime = options.turnTime * 1000;
         this.runDownTimer = options.runDownTimer;
+        this.names = options.names;
         this.maxPlayers = options.players;
         this.players = {};
         this.gameMax = options.gameMax;
@@ -47,6 +51,7 @@ class Match {
         this.columns = options.columns;
         this.turnTime = options.turnTime * 1000;
         this.runDownTimer = options.runDownTimer;
+        this.names = options.names;
         this.maxPlayers = options.players;
         this.gameMax = options.gameMax;
         this.matchUpdate();
@@ -55,7 +60,8 @@ class Match {
     playerInfo() {
         return Object.keys(this.players).map(player => ({
             id: player.slice(0,6),
-            name: this.players[player].name,
+            name: this.turnNum > 0 ? this.players[player].genName : this.players[player].name,
+            cosmetics: this.players[player].cosmetics,
             bot: this.players[player].bot,
         }));
     }
@@ -76,6 +82,7 @@ class Match {
                 runDownTimer: this.runDownTimer,
                 players: this.maxPlayers,
                 gameMax: this.gameMax,
+                names: this.names,
             },
             players: this.playerInfo()
         };
@@ -91,6 +98,7 @@ class Match {
         this.players[player] = {
             ...defaultPlayer,
             name: io.sockets.sockets.get(player).username,
+            cosmetics: io.sockets.sockets.get(player).cosmetics,
             bot: false,
             difficulty: 1,
         }
@@ -130,9 +138,17 @@ class Match {
             if (Object.values(this.players).filter(p => p.bot).length >= 4)
                 return io.sockets.sockets.get(adder).emit('err', 'The maximum amount of bots in a match is 4.', 'Too many bots!');
             difficulty = Number(difficulty);
+            let cosmetics = {};
+            for (let i of ['a', 'b']) {
+                cosmetics[i] = {};
+                for (let j of availableCounters) {
+                    cosmetics[i][j.key] = j.available[Math.floor(Math.random() * j.available.length)]
+                }
+            }
             this.players[String(Math.random()).slice(2, 12)] = {
                 ...defaultPlayer,
                 name: `${difficulties[difficulty]}🤖${String(Math.random()).slice(2, 5)}`,
+                cosmetics: cosmetics,
                 bot: true,
                 difficulty: difficulty+1,
             }
@@ -198,6 +214,21 @@ class Match {
             }
         shuffleArray(this.games);
         this.games.forEach((game, index) => game.id = index);
+
+        switch (this.names) {
+            case 0: //normal
+                Object.values(this.players).forEach(player => player.genName = player.name);
+                break;
+
+            case 1: //gifted
+                let shuffledNames = shuffleArray(Object.values(this.players).map(player => player.name));
+                Object.values(this.players).forEach((player, index) => player.genName = shuffledNames[index]);
+                break;
+
+            case 2: //random
+                Object.values(this.players).forEach((player, index) => player.genName = `${nameWords.adjectives[Math.floor(Math.random() * nameWords.adjectives.length)]}${nameWords.nouns[Math.floor(Math.random() * nameWords.nouns.length)]}`);
+                break;         
+        }
 
         let matchInfo = {
             players: this.playerInfo(),
@@ -284,7 +315,7 @@ class Match {
 
             let results = Object.keys(this.players).map(player => ({
                 id: player.slice(0, 6),
-                name: this.players[player].name,
+                name: this.names == 0 ? this.players[player].genName : `${this.players[player].name} (${this.players[player].genName})`,
                 score: this.players[player].score,
             }));
 

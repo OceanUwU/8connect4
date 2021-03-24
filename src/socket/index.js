@@ -25,6 +25,8 @@ socket.on('connect', () => {
     if (!connectedOnce) {
         connectedOnce = true;
         ReactDOM.render(<ThemeProvider theme={theme}><CssBaseline /><Home /></ThemeProvider>, document.getElementById('root'));
+        if (localStorage.hasOwnProperty('cosmetics'))
+            socket.emit('cosmetics', JSON.parse(localStorage.cosmetics));
     }
 });
 

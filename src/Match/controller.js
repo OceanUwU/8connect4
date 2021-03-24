@@ -1,5 +1,6 @@
-import images from './images';
 import socket from '../socket';
+
+var images;
 
 const boxSize = 100;
 const gridlineSize = 4;
@@ -13,13 +14,18 @@ var ctx = canvas.getContext('2d');
 var slot = null;
 var turn = 'a';
 
+function setImages(newImages) {
+    images = newImages;
+}
+
 function turnChange(newTurn) {
     turn = newTurn;
     slot = null;
     render();
 }
 
-function setupController(matchInfo) {
+function setupController(matchInfo, newImages) {
+    images = newImages;
     boardWidth = matchInfo.columns;
     canvas.width = ((gridlineSize + boxSize) * boardWidth) + gridlineSize;
 }
@@ -74,6 +80,7 @@ canvas.addEventListener('mousedown', move);
 
 export {
     canvas,
+    setImages,
     setupController,
     turnChange,
 };

@@ -4,6 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import HomeIcon from '@material-ui/icons/Home';
 import socket from '../socket/';
 //import { gameNameChars } from '../Match/gameplay';
+import getCounter from '../Lobby/getCounter.js';
 
 const useStyles = makeStyles({
     root: {
@@ -99,7 +100,7 @@ function Results(props) {
                             <Typography variant="caption" display="block">
                                 Game {game.name}
                                 <br />
-                                <span className={playerClass(game.players.a)}>{game.players.a.name}</span> <img className={classes.counterImage} src="/a.png" /> vs <img className={classes.counterImage} src="/b.png" /> <span className={playerClass(game.players.b)}>{game.players.b.name}</span>
+                                <span className={playerClass(game.players.a)}>{game.players.a.name}</span> <img className={classes.counterImage} src={`/counters/${getCounter('a', game.players.a.cosmetics)}.png`} /> vs <img className={classes.counterImage} src={`/counters/${getCounter('b', game.players.b.cosmetics)}.png`} /> <span className={playerClass(game.players.b)}>{game.players.b.name}</span>
                                 {/*<br />
                                 {game.outcome == false ? 'Draw' : <span>Winner: <img className={classes.counterImage} src={`/${game.outcome}.png`} /></span>}*/}
                             </Typography>
