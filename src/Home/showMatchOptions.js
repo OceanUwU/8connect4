@@ -115,6 +115,12 @@ function MatchOptions(props) {
         setRunDownTimer(!runDownTimer);
         sendUpdate();
     };
+    const [customBots, setCustomBots] = React.useState(options.customBots);
+    const handleCustomBotsChange = event => {
+        options.customBots = !customBots;
+        setCustomBots(!customBots);
+        sendUpdate();
+    };
     const [nameConvention, setNameConvention] = React.useState(options.names);
     const handleNameConventionChange = event => {
         options.names = event.target.value;
@@ -247,6 +253,14 @@ function MatchOptions(props) {
             <FormControlLabel
                 control={<Checkbox color="primary" checked={runDownTimer} onChange={handleRunDownTimerChange} disabled={!props.editable} />}
                 label="Always run down turn timer?"
+                labelPlacement="start"
+            />
+            
+            <Divider />
+
+            <FormControlLabel
+                control={<Checkbox color="primary" checked={customBots} onChange={handleCustomBotsChange} disabled={!props.editable} />}
+                label="Should bots customize?"
                 labelPlacement="start"
             />
 

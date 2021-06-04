@@ -34,6 +34,7 @@ class Match {
         this.columns = options.columns;
         this.turnTime = options.turnTime * 1000;
         this.runDownTimer = options.runDownTimer;
+        this.customBots = options.customBots;
         this.names = options.names;
         this.maxPlayers = options.players;
         this.players = {};
@@ -51,6 +52,7 @@ class Match {
         this.columns = options.columns;
         this.turnTime = options.turnTime * 1000;
         this.runDownTimer = options.runDownTimer;
+        this.customBots = options.customBots;
         this.names = options.names;
         this.maxPlayers = options.players;
         this.gameMax = options.gameMax;
@@ -80,6 +82,7 @@ class Match {
                 columns: this.columns,
                 turnTime: Math.round(this.turnTime / 1000),
                 runDownTimer: this.runDownTimer,
+                customBots: this.customBots,
                 players: this.maxPlayers,
                 gameMax: this.gameMax,
                 names: this.names,
@@ -140,12 +143,15 @@ class Match {
                 return io.sockets.sockets.get(adder).emit('err', 'The maximum amount of bots in a match is 4.', 'Too many bots!');
             difficulty = Number(difficulty);
             let cosmetics = {};
-            for (let i of ['a', 'b']) {
-                cosmetics[i] = {};
-                for (let j of availableCounters) {
-                    cosmetics[i][j.key] = j.available[Math.floor(Math.random() * j.available.length)]
+            if (this.customBots) {
+                for (let i of ['a', 'b']) {
+                    cosmetics[i] = {};
+                    for (let j of availableCounters) {
+                        cosmetics[i][j.key] = j.available[Math.floor(Math.random() * j.available.length)]
+                    }
                 }
-            }
+            } else
+                cosmetics = {a:{s:0,c:0,f:0},b:{s:0,c:0,f:0}};
             this.players[String(Math.random()).slice(2, 12)] = {
                 ...defaultPlayer,
                 name: `${difficulties[difficulty]}🤖${String(Math.random()).slice(2, 5)}`,

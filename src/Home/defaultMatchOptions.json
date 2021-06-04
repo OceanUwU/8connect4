@@ -4,6 +4,7 @@
     "gameMax": 4,
     "turnTime": 30,
     "runDownTimer": false,
+    "customBots": false,
     "lineLength": 4,
     "columns": 7,
     "rows": 6,

@@ -90,6 +90,7 @@ let optionsValid = options => (
     && options.turnTime >= turnTimesAllowed[0]
     && options.turnTime <= turnTimesAllowed[1]
     && typeof options.runDownTimer == 'boolean'
+    && typeof options.customBots == 'boolean'
     && Number.isInteger(options.names)
     && options.names >= 0
     && options.names <= 2
