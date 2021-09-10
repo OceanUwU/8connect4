@@ -9,7 +9,7 @@
         "key": "s",
         "name": "Shape",
         "char": 1,
-        "available": [0, 1, 2]
+        "available": [0, 1, 2, 3]
     },
     {
         "key": "f",

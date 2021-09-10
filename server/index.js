@@ -6,7 +6,7 @@ const playersAllowed = [1, 25];
 const maxGamesAllowed = [1, 4];
 const turnTimesAllowed = [0, 1000];
 
-const codeLength = 6;
+const codeLength = 4;
 const codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const io = require("socket.io")(cfg.port, {
