@@ -180,6 +180,7 @@ io.on('connection', socket => {
                 turnTime: options.turnTime,
                 runDownTimer: options.runDownTimer,
                 names: options.names,
+                customBots: options.customBots,
             });
     });
 
