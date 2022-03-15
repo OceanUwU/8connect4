@@ -1,5 +1,5 @@
 # 8connect4
-demo: [8c4.flynna.uk](https://8c4.flynna.uk)
+demo: [8c4.ocean.lol](https://8c4.ocean.lol)
 ## setup
 1. `npm install`
 ### setup client
